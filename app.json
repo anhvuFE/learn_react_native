@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "sample-app",
-    "slug": "sample-app",
+    "name": "ScreenMindr",
+    "slug": "screenmindr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,19 +9,39 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F8FAFC"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "ScreenMindr needs camera access so you can take a photo to prove you completed your mission.",
+        "NSPhotoLibraryUsageDescription": "ScreenMindr needs photo library access so you can choose a photo for your mission.",
+        "NSMotionUsageDescription": "ScreenMindr counts your steps to verify your walk mission."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#F8FAFC"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACTIVITY_RECOGNITION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "ScreenMindr needs camera access so you can take a photo to prove you completed your mission.",
+          "photosPermission": "ScreenMindr needs photo library access so you can choose a photo for your mission."
+        }
+      ]
+    ]
   }
 }
