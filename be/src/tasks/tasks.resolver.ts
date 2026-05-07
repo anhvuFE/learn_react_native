@@ -1,6 +1,6 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Public } from '../auth/decorators/public.decorator';
 import type { User } from '../users/user.model';
 import { CreateTaskInput } from './task.input';
 import { Task, TaskStatus } from './task.model';
@@ -10,18 +10,22 @@ import { TasksService } from './tasks.service';
 export class TasksResolver {
   constructor(private readonly tasks: TasksService) {}
 
-  @Public()
   @Query(() => [Task], { name: 'tasks' })
-  findAll(
-    @Args('familyId', { nullable: true }) familyId?: string,
-  ): Promise<Task[]> {
-    return this.tasks.findAll(familyId);
+  findAll(@CurrentUser() user: User): Promise<Task[]> {
+    if (!user.familyId) throw new ForbiddenException('No family');
+    return this.tasks.findAll(user.familyId);
   }
 
-  @Public()
   @Query(() => Task, { name: 'task' })
-  findOne(@Args('id', { type: () => ID }) id: string): Promise<Task> {
-    return this.tasks.findOne(id);
+  async findOne(
+    @CurrentUser() user: User,
+    @Args('id', { type: () => ID }) id: string,
+  ): Promise<Task> {
+    const task = await this.tasks.findOne(id);
+    if (task.familyId && task.familyId !== user.familyId) {
+      throw new ForbiddenException('Not in your family');
+    }
+    return task;
   }
 
   @Mutation(() => Task)

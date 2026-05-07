@@ -50,6 +50,20 @@ export class PairingService {
     return s;
   }
 
+  async listActiveForParent(parentUid: string): Promise<PairingCode[]> {
+    const snap = await this.col.where('parentUid', '==', parentUid).get();
+    const now = Date.now();
+    return snap.docs
+      .map((d) => d.data() as PairingCodeDoc)
+      .filter((d) => !d.used && new Date(d.expiresAt).getTime() > now)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((d) => ({
+        code: d.code,
+        expiresAt: d.expiresAt,
+        childName: d.childName,
+      }));
+  }
+
   async createCode(
     parentUid: string,
     familyId: string,

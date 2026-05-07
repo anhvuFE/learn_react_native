@@ -14,6 +14,18 @@ export class RewardsInput {
 }
 
 @InputType()
+export class QuizQuestionInput {
+  @Field()
+  question!: string;
+
+  @Field(() => [String])
+  options!: string[];
+
+  @Field(() => Int)
+  correctIndex!: number;
+}
+
+@InputType()
 export class CreateTaskInput {
   @Field(() => TaskType)
   type!: TaskType;
@@ -38,4 +50,13 @@ export class CreateTaskInput {
 
   @Field(() => Int, { nullable: true })
   walkTargetSeconds?: number;
+
+  @Field({ nullable: true })
+  videoTitle?: string;
+
+  @Field(() => Int, { nullable: true })
+  quizSecondsPerQuestion?: number;
+
+  @Field(() => [QuizQuestionInput], { nullable: true })
+  quiz?: QuizQuestionInput[];
 }

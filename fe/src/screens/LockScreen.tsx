@@ -1,5 +1,8 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery } from "@apollo/client";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
   Easing,
   LayoutAnimation,
@@ -11,23 +14,36 @@ import {
 import AppTile from "../components/AppTile";
 import { Ionicons } from "../components/icons";
 import TaskCard from "../components/TaskCard";
-import { restrictedApps } from "../data/mockData";
+import { normalizeTask, type BeTask } from "../lib/normalize";
+import {
+  CREATE_TASK,
+  ME_QUERY,
+  RESTRICTED_APPS_QUERY,
+  TASKS_QUERY,
+} from "../lib/queries";
 import { colors, styles } from "../theme/styles";
 import { Task } from "../types";
 
+interface BeRestrictedApp {
+  id: string;
+  appId: string;
+  name: string;
+  packageName?: string | null;
+}
+
 interface Props {
-  tasks: Task[];
   onTaskPress: (task: Task) => void;
+  parentRole?: boolean;
 }
 
 const MiniStatCard = memo<{
   icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  iconBg: string;
+  bgColor: string;
+  glowColor?: string;
   value: string;
   label: string;
   index: number;
-}>(({ icon, iconColor, iconBg, value, label, index }) => {
+}>(({ icon, bgColor, glowColor, value, label, index }) => {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateX = useRef(new Animated.Value(20)).current;
 
@@ -52,20 +68,140 @@ const MiniStatCard = memo<{
     <Animated.View
       style={[
         styles.miniStatCard,
-        { opacity, transform: [{ translateX }] },
+        {
+          backgroundColor: bgColor,
+          opacity,
+          transform: [{ translateX }],
+        },
       ]}
     >
-      <View style={[styles.miniStatIconWrap, { backgroundColor: iconBg }]}>
-        <Ionicons name={icon} size={18} color={iconColor} />
+      {glowColor && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: -30,
+            right: -30,
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            backgroundColor: glowColor,
+            opacity: 0.35,
+          }}
+        />
+      )}
+      <View style={styles.miniStatTopRow}>
+        <Text style={styles.miniStatLabelInline} numberOfLines={1}>
+          {label}
+        </Text>
+        <Ionicons name={icon} size={16} color="rgba(255,255,255,0.95)" />
       </View>
-      <Text style={styles.miniStatValue}>{value}</Text>
-      <Text style={styles.miniStatLabel}>{label}</Text>
+      <View>
+        <Text style={styles.miniStatValue} numberOfLines={1}>
+          {value}
+        </Text>
+      </View>
     </Animated.View>
   );
 });
 MiniStatCard.displayName = "MiniStatCard";
 
-const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
+const LockScreen: React.FC<Props> = ({ onTaskPress, parentRole }) => {
+  const { data: meData } = useQuery<{
+    me: { name?: string; email?: string };
+  }>(ME_QUERY, { fetchPolicy: "cache-first" });
+  const displayName =
+    meData?.me?.name?.split(" ")[0] ??
+    meData?.me?.email?.split("@")[0] ??
+    "there";
+
+  const { data, loading, error, refetch } = useQuery<{ tasks: BeTask[] }>(
+    TASKS_QUERY,
+    { fetchPolicy: "cache-and-network", pollInterval: 30000 },
+  );
+  const { data: appsData } = useQuery<{ restrictedApps: BeRestrictedApp[] }>(
+    RESTRICTED_APPS_QUERY,
+    { fetchPolicy: "cache-and-network" },
+  );
+  const restrictedApps = useMemo(
+    () => appsData?.restrictedApps ?? [],
+    [appsData?.restrictedApps],
+  );
+  const tasks = useMemo<Task[]>(
+    () => (data?.tasks ?? []).map(normalizeTask),
+    [data?.tasks],
+  );
+
+  const [createTask, { loading: seeding }] = useMutation(CREATE_TASK, {
+    refetchQueries: [{ query: TASKS_QUERY }],
+  });
+
+  const seedDemoTasks = async () => {
+    try {
+      await Promise.all([
+        createTask({
+          variables: {
+            input: {
+              type: "WALK",
+              title: "Walk Adventure",
+              description: "Walk 20 steps to complete the mission",
+              rewards: { screenTimeMin: 30, points: 50, cashUsd: 1.0 },
+              walkTargetSeconds: 60,
+              walkTargetSteps: 20,
+            },
+          },
+        }),
+        createTask({
+          variables: {
+            input: {
+              type: "VIDEO_QUIZ",
+              title: "Quiz Challenge",
+              description: "Answer 3 questions about what you watched",
+              rewards: { screenTimeMin: 20, points: 30, cashUsd: 0.75 },
+              videoTitle: "Staying Safe Online (2:14)",
+              quizSecondsPerQuestion: 140,
+              quiz: [
+                {
+                  question:
+                    "What was the speaker wearing halfway through the video?",
+                  options: ["Blue hat", "Funny green hat", "Red cap", "Black glasses"],
+                  correctIndex: 1,
+                },
+                {
+                  question: "Where did the video take place?",
+                  options: [
+                    "At the beach",
+                    "In a classroom",
+                    "In a restaurant",
+                    "At the park",
+                  ],
+                  correctIndex: 1,
+                },
+                {
+                  question: "What was the main topic of the video?",
+                  options: ["Space", "Recycling", "Dinosaurs", "Cooking"],
+                  correctIndex: 1,
+                },
+              ],
+            },
+          },
+        }),
+        createTask({
+          variables: {
+            input: {
+              type: "PHOTO",
+              title: "Room Reset",
+              description: "Take a photo of your clean room",
+              rewards: { screenTimeMin: 25, points: 40, cashUsd: 1.25 },
+            },
+          },
+        }),
+      ]);
+    } catch (e) {
+      Alert.alert("Failed to seed", (e as Error).message);
+    }
+  };
+
   const [expanded, setExpanded] = useState(false);
 
   const greetOpacity = useRef(new Animated.Value(0)).current;
@@ -175,7 +311,9 @@ const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
   });
 
   const availableCount = tasks.filter((t) => t.status === "available").length;
-  const maxReward = Math.max(...tasks.map((t) => t.rewards.cashUsd));
+  const maxReward = tasks.length
+    ? Math.max(...tasks.map((t) => t.rewards.cashUsd))
+    : 0;
 
   return (
     <ScrollView
@@ -187,14 +325,22 @@ const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
     >
       <Animated.View style={[styles.greetingRow, { opacity: greetOpacity }]}>
         <View style={styles.greetingAvatar}>
-          <Text style={styles.greetingAvatarText}>A</Text>
+          <Text style={styles.greetingAvatarText}>
+            {displayName[0]?.toUpperCase() ?? "?"}
+          </Text>
           <View style={styles.greetingDot} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.greetingHi}>Good day</Text>
-          <Text style={styles.greetingName}>Hi, Alex 👋</Text>
+          <Text style={styles.greetingName}>Hi, {displayName} 👋</Text>
         </View>
         <Pressable
+          onPress={() =>
+            Alert.alert(
+              "Notifications",
+              "FCM push notifications launch in the next milestone — backend FCM module is ready.",
+            )
+          }
           style={({ pressed }) => [
             styles.iconBtn,
             pressed && { opacity: 0.6, transform: [{ scale: 0.95 }] },
@@ -319,40 +465,40 @@ const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
         contentContainerStyle={styles.hScrollContent}
         style={styles.hScroll}
         decelerationRate="fast"
-        snapToInterval={116}
+        snapToInterval={108}
         snapToAlignment="start"
       >
         <MiniStatCard
           index={0}
           icon="rocket"
-          iconColor={colors.primary}
-          iconBg={colors.primarySoft}
+          bgColor={colors.primary}
+          glowColor="#86EFAC"
           value={`${availableCount}`}
-          label="Missions ready"
+          label="Missions"
         />
         <MiniStatCard
           index={1}
-          icon="cash-outline"
-          iconColor={colors.cash}
-          iconBg={colors.cashSoft}
+          icon="cash"
+          bgColor={colors.cash}
+          glowColor="#FBBF24"
           value={`$${maxReward.toFixed(2)}`}
           label="Max reward"
         />
         <MiniStatCard
           index={2}
           icon="lock-closed"
-          iconColor={colors.muted}
-          iconBg={colors.surfaceAlt}
+          bgColor="#0F172A"
+          glowColor="#7C3AED"
           value={`${restrictedApps.length}`}
-          label="Apps locked"
+          label="Locked"
         />
         <MiniStatCard
           index={3}
-          icon="time-outline"
-          iconColor={colors.screenTime}
-          iconBg={colors.screenTimeSoft}
+          icon="time"
+          bgColor={colors.screenTime}
+          glowColor="#FBBF24"
           value="0m"
-          label="Earned today"
+          label="Earned"
         />
       </ScrollView>
 
@@ -364,7 +510,7 @@ const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
       </View>
       <View style={styles.appsGrid}>
         {restrictedApps.map((app, i) => (
-          <AppTile key={app.id} id={app.id} name={app.name} index={i} />
+          <AppTile key={app.id} id={app.appId} name={app.name} index={i} />
         ))}
       </View>
 
@@ -374,14 +520,108 @@ const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
           {availableCount} ready
         </Text>
       </View>
-      {tasks.map((task, i) => (
-        <TaskCard
-          key={task.id}
-          task={task}
-          index={i}
-          onSelect={onTaskPress}
-        />
-      ))}
+
+      {loading && tasks.length === 0 ? (
+        <View style={{ paddingVertical: 24, alignItems: "center" }}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View
+          style={{
+            backgroundColor: colors.dangerSoft,
+            padding: 14,
+            borderRadius: 14,
+            marginBottom: 10,
+          }}
+        >
+          <Text style={{ color: colors.danger, fontWeight: "700" }}>
+            Couldn't load tasks
+          </Text>
+          <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4 }}>
+            {error.message}
+          </Text>
+          <Pressable
+            onPress={() => refetch()}
+            style={{ marginTop: 8 }}
+          >
+            <Text style={{ color: colors.danger, fontWeight: "700" }}>
+              Tap to retry
+            </Text>
+          </Pressable>
+        </View>
+      ) : tasks.length === 0 ? (
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 18,
+            padding: 22,
+            alignItems: "center",
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          <Ionicons name="rocket-outline" size={40} color={colors.muted} />
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: "700",
+              color: colors.text,
+              marginTop: 10,
+            }}
+          >
+            No missions yet
+          </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              color: colors.muted,
+              textAlign: "center",
+              marginTop: 6,
+              marginBottom: 14,
+            }}
+          >
+            {parentRole
+              ? "Seed 3 demo missions to test the flow"
+              : "Ask your parent to add a mission"}
+          </Text>
+          {parentRole && (
+            <Pressable
+              onPress={seedDemoTasks}
+              disabled={seeding}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.primaryButtonPressed,
+                seeding && { opacity: 0.6 },
+              ]}
+            >
+              {seeding ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Ionicons
+                    name="sparkles"
+                    size={16}
+                    color="#fff"
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={styles.primaryButtonText}>
+                    Seed demo missions
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          )}
+        </View>
+      ) : (
+        tasks.map((task, i) => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            index={i}
+            onSelect={onTaskPress}
+          />
+        ))
+      )}
 
       <Text style={styles.footerNote}>
         * Cash rewards require parent approval and payout setup.

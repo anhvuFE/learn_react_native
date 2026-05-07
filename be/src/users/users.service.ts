@@ -63,4 +63,24 @@ export class UsersService {
   async setFamilyId(uid: string, familyId: string): Promise<void> {
     await this.col.doc(uid).update({ familyId });
   }
+
+  async setPushToken(uid: string, token: string | null): Promise<void> {
+    await this.col.doc(uid).update({ pushToken: token });
+  }
+
+  async update(
+    uid: string,
+    patch: Record<string, unknown>,
+  ): Promise<User> {
+    const cleaned: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(patch)) {
+      if (v !== undefined) cleaned[k] = v;
+    }
+    if (Object.keys(cleaned).length > 0) {
+      await this.col.doc(uid).update(cleaned);
+    }
+    const found = await this.findByUid(uid);
+    if (!found) throw new Error('User not found after update');
+    return found;
+  }
 }

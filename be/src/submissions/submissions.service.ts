@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
+import { PushService } from '../notifications/push.service';
 import { RewardType } from '../rewards/reward.model';
 import { RewardsService } from '../rewards/rewards.service';
 import { StorageService } from '../storage/storage.service';
@@ -28,6 +29,7 @@ export class SubmissionsService {
     private readonly storage: StorageService,
     private readonly tasks: TasksService,
     private readonly rewards: RewardsService,
+    private readonly push: PushService,
   ) {}
 
   private get col() {
@@ -81,9 +83,34 @@ export class SubmissionsService {
         'Photo not found at storage path — upload first',
       );
     }
-    return this.createBase(childUid, familyId, input.taskId, input.chosenReward, {
-      photoStoragePath: input.photoStoragePath,
-    });
+    const submission = await this.createBase(
+      childUid,
+      familyId,
+      input.taskId,
+      input.chosenReward,
+      { photoStoragePath: input.photoStoragePath },
+    );
+    // Notify parent that a submission is waiting
+    const parentUid = await this.parentUidForFamily(familyId);
+    if (parentUid) {
+      const task = await this.tasks.findOne(input.taskId);
+      void this.push.send({
+        uid: parentUid,
+        title: 'New mission to review',
+        body: `Photo evidence for "${task.title}"`,
+        data: { kind: 'submission_pending', submissionId: submission.id },
+      });
+    }
+    return submission;
+  }
+
+  private async parentUidForFamily(familyId: string): Promise<string | null> {
+    const doc = await this.firebase.firestore
+      .collection('families')
+      .doc(familyId)
+      .get();
+    if (!doc.exists) return null;
+    return (doc.data() as { parentUid?: string }).parentUid ?? null;
   }
 
   async submitTimer(
@@ -91,9 +118,15 @@ export class SubmissionsService {
     familyId: string,
     input: SubmitTimerTaskInput,
   ): Promise<Submission> {
-    return this.createBase(childUid, familyId, input.taskId, input.chosenReward, {
-      timerSeconds: input.timerSeconds,
-    });
+    const submission = await this.createBase(
+      childUid,
+      familyId,
+      input.taskId,
+      input.chosenReward,
+      { timerSeconds: input.timerSeconds },
+    );
+    // Spec 4.4: timer/walk auto-approves; parent optionally verifies later via UI
+    return this.approve(submission.id, childUid, /* autoApprove */ true);
   }
 
   /**
@@ -212,7 +245,22 @@ export class SubmissionsService {
     this.logger.log(
       `Approved submission ${id} → reward ${reward.id} (${reward.type} ${reward.amount})`,
     );
+
+    // Notify child that their submission was approved
+    void this.push.send({
+      uid: submission.childUid,
+      title: 'Mission approved! 🎉',
+      body: `You earned ${this.formatRewardAmount(reward.type, reward.amount)} for "${task.title}"`,
+      data: { kind: 'submission_approved', submissionId: id, rewardId: reward.id },
+    });
+
     return this.findOne(id);
+  }
+
+  private formatRewardAmount(type: string, amount: number): string {
+    if (type === RewardType.SCREEN_TIME) return `${amount} min screen time`;
+    if (type === RewardType.POINTS) return `${amount} points`;
+    return `$${amount.toFixed(2)}`;
   }
 
   async reject(
@@ -234,6 +282,17 @@ export class SubmissionsService {
       reviewerUid: autoReject ? 'system:auto-quiz' : reviewerUid,
       rejectionReason: reason ?? null,
     });
+
+    // Notify child of rejection (skip auto-rejected quizzes — child sees result inline)
+    if (!autoReject) {
+      void this.push.send({
+        uid: submission.childUid,
+        title: 'Mission needs another try',
+        body: reason ?? 'Parent asked you to retake — open the app to try again.',
+        data: { kind: 'submission_rejected', submissionId: id },
+      });
+    }
+
     return this.findOne(id);
   }
 

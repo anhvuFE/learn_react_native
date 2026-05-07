@@ -1,8 +1,11 @@
+import { useMutation } from "@apollo/client";
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, Text, View } from "react-native";
+import { Alert, Animated, Easing, Pressable, Text, View } from "react-native";
 import { Ionicons } from "../components/icons";
 import RewardPicker from "../components/RewardPicker";
 import RewardsRow from "../components/RewardsRow";
+import { beRewardType } from "../lib/normalize";
+import { MY_BANK_QUERY, MY_REWARDS_QUERY, SUBMIT_QUIZ } from "../lib/queries";
 import { colors, styles } from "../theme/styles";
 import { RewardType, Task } from "../types";
 
@@ -31,6 +34,9 @@ const QuizTask: React.FC<Props> = ({
   onPass,
   onFail,
 }) => {
+  const [submitQuiz] = useMutation(SUBMIT_QUIZ, {
+    refetchQueries: [{ query: MY_BANK_QUERY }, { query: MY_REWARDS_QUERY }],
+  });
   const quiz = task.quiz ?? [];
   const perQ = task.quizSecondsPerQuestion ?? 140;
 
@@ -135,6 +141,49 @@ const QuizTask: React.FC<Props> = ({
 
   if (stage === "quiz") {
     const q = quiz[qIdx];
+
+    if (!q) {
+      return (
+        <View style={{ padding: 20, alignItems: "center" }}>
+          <Ionicons
+            name="alert-circle"
+            size={40}
+            color={colors.danger}
+          />
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: "700",
+              color: colors.text,
+              marginTop: 10,
+              textAlign: "center",
+            }}
+          >
+            This quiz has no questions yet
+          </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              color: colors.muted,
+              marginTop: 6,
+              textAlign: "center",
+            }}
+          >
+            Ask your parent to set them up.
+          </Text>
+          <View style={{ height: 14 }} />
+          <Pressable
+            onPress={onFail}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              pressed && styles.primaryButtonPressed,
+            ]}
+          >
+            <Text style={styles.primaryButtonText}>Back</Text>
+          </Pressable>
+        </View>
+      );
+    }
 
     const slideX = slide.interpolate({
       inputRange: [0, 1],
@@ -286,7 +335,23 @@ const QuizTask: React.FC<Props> = ({
       <RewardsRow rewards={task.rewards} />
 
       <Pressable
-        onPress={() => (passed ? onPass(reward) : onFail())}
+        onPress={async () => {
+          try {
+            await submitQuiz({
+              variables: {
+                input: {
+                  taskId: task.id,
+                  chosenReward: beRewardType(reward),
+                  quizScore: percent,
+                },
+              },
+            });
+            if (passed) onPass(reward);
+            else onFail();
+          } catch (e) {
+            Alert.alert("Submit failed", (e as Error).message);
+          }
+        }}
         style={({ pressed }) => [
           styles.primaryButton,
           pressed && styles.primaryButtonPressed,

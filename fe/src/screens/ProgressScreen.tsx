@@ -1,15 +1,36 @@
-import React, { memo, useEffect, useRef } from "react";
+import { useQuery } from "@apollo/client";
+import React, { memo, useEffect, useMemo, useRef } from "react";
 import { Animated, ScrollView, Text, View } from "react-native";
 import CountUp from "../components/CountUp";
 import { Ionicons } from "../components/icons";
 import { REWARD_META } from "../components/RewardPicker";
+import { feRewardType, feTaskType } from "../lib/normalize";
+import { MY_BANK_QUERY, MY_REWARDS_QUERY } from "../lib/queries";
 import { colors, styles } from "../theme/styles";
-import { CompletedMission } from "../types";
+import { RewardType } from "../types";
 
-interface Props {
-  history: CompletedMission[];
-  pointsBank: number;
-  cashBank: number;
+interface RewardRow {
+  id: string;
+  type: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+  expiresAt?: string | null;
+  taskId: string;
+  task?: {
+    id: string;
+    type: string;
+    title: string;
+  } | null;
+}
+
+interface HistoryItem {
+  id: string;
+  reward: RewardType;
+  amount: number;
+  createdAt: string;
+  taskTitle: string;
+  taskType: "walk" | "video-quiz" | "photo";
 }
 
 const TASK_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -72,8 +93,8 @@ const FlameIcon: React.FC = () => {
   );
 };
 
-const HistoryRow = memo<{ mission: CompletedMission; index: number }>(({
-  mission,
+const HistoryRow = memo<{ item: HistoryItem; index: number }>(({
+  item,
   index,
 }) => {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -96,13 +117,13 @@ const HistoryRow = memo<{ mission: CompletedMission; index: number }>(({
     ]).start();
   }, [index, opacity, translateX]);
 
-  const m = REWARD_META[mission.reward];
+  const m = REWARD_META[item.reward];
   const value =
-    mission.reward === "screen-time"
-      ? `+${mission.task.rewards.screenTimeMin}m`
-      : mission.reward === "points"
-        ? `+${mission.task.rewards.points}`
-        : `+$${mission.task.rewards.cashUsd.toFixed(2)}`;
+    item.reward === "screen-time"
+      ? `+${Math.round(item.amount)}m`
+      : item.reward === "points"
+        ? `+${Math.round(item.amount)}`
+        : `+$${item.amount.toFixed(2)}`;
 
   return (
     <Animated.View
@@ -114,19 +135,19 @@ const HistoryRow = memo<{ mission: CompletedMission; index: number }>(({
       <View
         style={[
           styles.historyIconWrap,
-          { backgroundColor: TASK_BG[mission.task.type] },
+          { backgroundColor: TASK_BG[item.taskType] },
         ]}
       >
         <Ionicons
-          name={TASK_ICON[mission.task.type]}
+          name={TASK_ICON[item.taskType]}
           size={20}
-          color={TASK_COLOR[mission.task.type]}
+          color={TASK_COLOR[item.taskType]}
         />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.historyTitle}>{mission.task.title}</Text>
+        <Text style={styles.historyTitle}>{item.taskTitle}</Text>
         <Text style={styles.historyMeta}>
-          {formatTimeAgo(mission.completedAt)}
+          {formatTimeAgo(new Date(item.createdAt).getTime())}
         </Text>
       </View>
       <Text style={[styles.historyReward, { color: m.bg }]}>{value}</Text>
@@ -135,24 +156,61 @@ const HistoryRow = memo<{ mission: CompletedMission; index: number }>(({
 });
 HistoryRow.displayName = "HistoryRow";
 
-const ProgressScreen: React.FC<Props> = ({
-  history,
-  pointsBank,
-  cashBank,
-}) => {
+const ProgressScreen: React.FC = () => {
+  const { data: bankData } = useQuery(MY_BANK_QUERY, {
+    fetchPolicy: "cache-and-network",
+  });
+  const { data: rewardsData } = useQuery<{ myRewards: RewardRow[] }>(
+    MY_REWARDS_QUERY,
+    { fetchPolicy: "cache-and-network", pollInterval: 30000 },
+  );
+
+  const history = useMemo<HistoryItem[]>(() => {
+    return (rewardsData?.myRewards ?? []).map((r) => ({
+      id: r.id,
+      reward: feRewardType(r.type),
+      amount: r.amount,
+      createdAt: r.createdAt,
+      taskTitle: r.task?.title ?? "Mission",
+      taskType: r.task ? feTaskType(r.task.type) : "walk",
+    }));
+  }, [rewardsData?.myRewards]);
+
   const totalScreenTime = history
     .filter((h) => h.reward === "screen-time")
-    .reduce((sum, h) => sum + h.task.rewards.screenTimeMin, 0);
+    .reduce((sum, h) => sum + h.amount, 0);
+  void bankData;
 
-  const streak = Math.min(history.length, 7);
+  // Real last-7-days bar chart, indexed by local day
+  const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+  const todayIdx = new Date().getDay();
+  const orderedDayIndexes = Array.from({ length: 7 }, (_, i) => (todayIdx - 6 + i + 7) % 7);
+  const dayBuckets: number[] = orderedDayIndexes.map(() => 0);
+  const datesSet = new Set<string>();
+  for (const h of history) {
+    const d = new Date(h.createdAt);
+    const ageDays = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (ageDays >= 0 && ageDays < 7) {
+      const slot = 6 - ageDays;
+      dayBuckets[slot]! += 1;
+      datesSet.add(d.toDateString());
+    }
+  }
+  const days = orderedDayIndexes.map((idx) => DAY_LABELS[idx]);
+  const dayCounts = dayBuckets;
+  const maxCount = Math.max(...dayCounts, 1);
 
-  // Mock weekly distribution: spread missions across last 7 days
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
-  const dayCounts = days.map((_, i) => {
-    const target = Math.max(0, 5 - Math.abs(3 - i));
-    return Math.min(history.length, target + (i === 6 ? history.length : 0));
-  });
-  const maxCount = Math.max(...dayCounts, 3);
+  // Real streak: consecutive past days (incl. today) with at least one approved reward
+  const datesWithReward = new Set(
+    history.map((h) => new Date(h.createdAt).toDateString()),
+  );
+  let streak = 0;
+  for (let i = 0; i < 90; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    if (datesWithReward.has(d.toDateString())) streak++;
+    else if (i > 0) break;
+  }
 
   const heroOpacity = useRef(new Animated.Value(0)).current;
   const heroScale = useRef(new Animated.Value(0.96)).current;
@@ -319,7 +377,7 @@ const ProgressScreen: React.FC<Props> = ({
         history
           .slice()
           .reverse()
-          .map((h, i) => <HistoryRow key={i} mission={h} index={i} />)
+          .map((h, i) => <HistoryRow key={h.id} item={h} index={i} />)
       )}
     </ScrollView>
   );

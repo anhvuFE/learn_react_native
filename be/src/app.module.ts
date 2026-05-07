@@ -6,7 +6,9 @@ import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { FamiliesModule } from './families/families.module';
 import { FirebaseModule } from './firebase/firebase.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PairingModule } from './pairing/pairing.module';
+import { RestrictedAppsModule } from './restricted-apps/restricted-apps.module';
 import { RewardsModule } from './rewards/rewards.module';
 import { StorageModule } from './storage/storage.module';
 import { SubmissionsModule } from './submissions/submissions.module';
@@ -29,10 +31,12 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     FamiliesModule,
     AuthModule,
+    NotificationsModule,
     PairingModule,
     TasksModule,
     RewardsModule,
     SubmissionsModule,
+    RestrictedAppsModule,
   ],
 })
 export class AppModule {}

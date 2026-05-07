@@ -1,3 +1,5 @@
+import { useMutation } from "@apollo/client";
+import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -12,7 +14,13 @@ import {
 import { Ionicons } from "../components/icons";
 import RewardPicker from "../components/RewardPicker";
 import RewardsRow from "../components/RewardsRow";
-import { PARENT_APPROVAL_DELAY_MS } from "../data/mockData";
+import { beRewardType } from "../lib/normalize";
+import {
+  MY_BANK_QUERY,
+  MY_REWARDS_QUERY,
+  REQUEST_PHOTO_UPLOAD,
+  SUBMIT_PHOTO,
+} from "../lib/queries";
 import { colors, styles } from "../theme/styles";
 import { RewardType, Task } from "../types";
 
@@ -41,6 +49,16 @@ const PhotoTask: React.FC<Props> = ({
   const [stage, setStage] = useState<Stage>("intro");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [submitPhoto] = useMutation(SUBMIT_PHOTO, {
+    refetchQueries: [{ query: MY_BANK_QUERY }, { query: MY_REWARDS_QUERY }],
+  });
+  const [requestPhotoUpload] = useMutation<{
+    requestPhotoUpload: {
+      storagePath: string;
+      uploadUrl: string;
+      contentType: string;
+    };
+  }>(REQUEST_PHOTO_UPLOAD);
 
   const hourglassRotate = useRef(new Animated.Value(0)).current;
   const approvedScale = useRef(new Animated.Value(0.5)).current;
@@ -134,12 +152,50 @@ const PhotoTask: React.FC<Props> = ({
     );
   }
 
-  function submit() {
+  async function submit() {
+    if (!photoUri) {
+      Alert.alert("No photo", "Take or pick a photo first");
+      return;
+    }
     setStage("waiting");
-    timerRef.current = setTimeout(() => {
-      const approved = Math.random() > 0.2;
-      setStage(approved ? "approved" : "rejected");
-    }, PARENT_APPROVAL_DELAY_MS);
+    try {
+      // 1. Get signed PUT URL from BE
+      const { data: uploadData } = await requestPhotoUpload({
+        variables: { input: { taskId: task.id } },
+      });
+      const upload = uploadData?.requestPhotoUpload;
+      if (!upload) throw new Error("No upload URL returned");
+
+      // 2. Upload photo bytes via signed PUT (expo-file-system handles file:// URIs)
+      const putRes = await FileSystem.uploadAsync(
+        upload.uploadUrl,
+        photoUri,
+        {
+          httpMethod: "PUT",
+          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+          headers: { "Content-Type": upload.contentType },
+        },
+      );
+      if (putRes.status >= 300) {
+        throw new Error(`Upload failed (${putRes.status}): ${putRes.body?.slice(0, 200) ?? ""}`);
+      }
+
+      // 3. Tell BE the path is ready — BE creates PENDING submission
+      await submitPhoto({
+        variables: {
+          input: {
+            taskId: task.id,
+            chosenReward: beRewardType(reward),
+            photoStoragePath: upload.storagePath,
+          },
+        },
+      });
+      // Submission is now PENDING — wait for parent review.
+      // Stay on "waiting" stage; child can leave the screen.
+    } catch (e) {
+      Alert.alert("Submit failed", (e as Error).message);
+      setStage("review");
+    }
   }
 
   if (stage === "intro") {

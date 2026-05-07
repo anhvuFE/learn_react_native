@@ -1,6 +1,17 @@
 import { ForbiddenException } from '@nestjs/common';
-import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  ID,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Task } from '../tasks/task.model';
+import { TasksService } from '../tasks/tasks.service';
 import type { User } from '../users/user.model';
 import { UserRole } from '../users/user.model';
 import { Bank, Reward } from './reward.model';
@@ -8,7 +19,19 @@ import { RewardsService } from './rewards.service';
 
 @Resolver(() => Reward)
 export class RewardsResolver {
-  constructor(private readonly rewards: RewardsService) {}
+  constructor(
+    private readonly rewards: RewardsService,
+    private readonly tasks: TasksService,
+  ) {}
+
+  @ResolveField(() => Task, { nullable: true })
+  async task(@Parent() reward: Reward): Promise<Task | null> {
+    try {
+      return await this.tasks.findOne(reward.taskId);
+    } catch {
+      return null;
+    }
+  }
 
   @Query(() => Bank, { name: 'myBank' })
   myBank(@CurrentUser() user: User): Promise<Bank> {

@@ -1,10 +1,13 @@
+import { useMutation } from "@apollo/client";
 import { Pedometer } from "expo-sensors";
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Easing, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Easing, Pressable, Text, View } from "react-native";
 import CircularProgress from "../components/CircularProgress";
 import { Ionicons } from "../components/icons";
 import RewardPicker from "../components/RewardPicker";
 import RewardsRow from "../components/RewardsRow";
+import { beRewardType } from "../lib/normalize";
+import { MY_BANK_QUERY, MY_REWARDS_QUERY, SUBMIT_TIMER } from "../lib/queries";
 import { colors, styles } from "../theme/styles";
 import { RewardType, Task } from "../types";
 
@@ -245,6 +248,10 @@ const WalkTask: React.FC<Props> = ({
   onChangeReward,
   onComplete,
 }) => {
+  const [submitTimer, { loading: submitting }] = useMutation(SUBMIT_TIMER, {
+    refetchQueries: [{ query: MY_BANK_QUERY }, { query: MY_REWARDS_QUERY }],
+  });
+
   const targetSteps = task.walkTargetSteps ?? 20;
   const totalSec = task.walkTargetSeconds ?? 60;
 
@@ -505,13 +512,34 @@ const WalkTask: React.FC<Props> = ({
 
       {stage === "done" && (
         <Pressable
-          onPress={() => onComplete(reward)}
+          disabled={submitting}
+          onPress={async () => {
+            try {
+              await submitTimer({
+                variables: {
+                  input: {
+                    taskId: task.id,
+                    chosenReward: beRewardType(reward),
+                    timerSeconds: elapsed,
+                  },
+                },
+              });
+              onComplete(reward);
+            } catch (e) {
+              Alert.alert("Submit failed", (e as Error).message);
+            }
+          }}
           style={({ pressed }) => [
             styles.primaryButton,
             pressed && styles.primaryButtonPressed,
+            submitting && { opacity: 0.6 },
           ]}
         >
-          <Text style={styles.primaryButtonText}>Continue</Text>
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.primaryButtonText}>Continue</Text>
+          )}
         </Pressable>
       )}
     </Animated.View>

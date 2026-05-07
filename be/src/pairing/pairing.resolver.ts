@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import type { User } from '../users/user.model';
@@ -11,6 +11,14 @@ import { PairingService } from './pairing.service';
 @Resolver()
 export class PairingResolver {
   constructor(private readonly pairing: PairingService) {}
+
+  @Query(() => [PairingCode], { name: 'myPairingCodes' })
+  myPairingCodes(@CurrentUser() user: User): Promise<PairingCode[]> {
+    if (user.role !== UserRole.PARENT) {
+      throw new ForbiddenException('Parents only');
+    }
+    return this.pairing.listActiveForParent(user.uid);
+  }
 
   @Mutation(() => PairingCode, {
     description: 'Parent generates a 6-char pairing code for a new child',

@@ -29,6 +29,18 @@ export class Rewards {
 }
 
 @ObjectType()
+export class QuizQuestion {
+  @Field()
+  question!: string;
+
+  @Field(() => [String])
+  options!: string[];
+
+  @Field(() => Int)
+  correctIndex!: number;
+}
+
+@ObjectType()
 export class Task {
   @Field(() => ID)
   id!: string;
@@ -59,4 +71,13 @@ export class Task {
 
   @Field(() => Int, { nullable: true })
   walkTargetSeconds?: number;
+
+  @Field({ nullable: true })
+  videoTitle?: string;
+
+  @Field(() => Int, { nullable: true })
+  quizSecondsPerQuestion?: number;
+
+  @Field(() => [QuizQuestion], { nullable: true })
+  quiz?: QuizQuestion[];
 }

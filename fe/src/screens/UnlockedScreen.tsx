@@ -1,9 +1,16 @@
+import { useQuery } from "@apollo/client";
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, Text, View } from "react-native";
 import AppTile from "../components/AppTile";
 import { Ionicons } from "../components/icons";
-import { restrictedApps } from "../data/mockData";
+import { RESTRICTED_APPS_QUERY } from "../lib/queries";
 import { colors, styles } from "../theme/styles";
+
+interface BeRestrictedApp {
+  id: string;
+  appId: string;
+  name: string;
+}
 
 interface Props {
   endsAt: number;
@@ -18,6 +25,11 @@ function format(seconds: number) {
 }
 
 const UnlockedScreen: React.FC<Props> = ({ endsAt, onExpire, onLockNow }) => {
+  const { data: appsData } = useQuery<{ restrictedApps: BeRestrictedApp[] }>(
+    RESTRICTED_APPS_QUERY,
+    { fetchPolicy: "cache-and-network" },
+  );
+  const restrictedApps = appsData?.restrictedApps ?? [];
   const [remaining, setRemaining] = useState(() =>
     Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)),
   );
@@ -121,7 +133,7 @@ const UnlockedScreen: React.FC<Props> = ({ endsAt, onExpire, onLockNow }) => {
         {restrictedApps.map((app, i) => (
           <AppTile
             key={app.id}
-            id={app.id}
+            id={app.appId}
             name={app.name}
             index={i}
             unlocked

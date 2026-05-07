@@ -1,8 +1,19 @@
 import React, { memo, useEffect, useRef } from "react";
 import { Animated, Text, View } from "react-native";
-import { APP_BRAND_COLOR } from "../data/mockData";
 import { colors, styles } from "../theme/styles";
 import { AppBrandIcon, Ionicons } from "./icons";
+
+// Brand color palette per known app id (visual mapping, not user data).
+export const APP_BRAND_COLOR: Record<
+  string,
+  { bg: string; iconColor: string }
+> = {
+  tiktok: { bg: "#000000", iconColor: "#FFFFFF" },
+  instagram: { bg: "#E4405F", iconColor: "#FFFFFF" },
+  youtube: { bg: "#FF0000", iconColor: "#FFFFFF" },
+  roblox: { bg: "#1F2126", iconColor: "#FFFFFF" },
+  snap: { bg: "#FFFC00", iconColor: "#FFFFFF" },
+};
 
 interface Props {
   id: string;

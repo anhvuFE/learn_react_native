@@ -27,6 +27,27 @@ export class User {
   @Field({ nullable: true })
   parentUid?: string;
 
+  @Field({ nullable: true })
+  pushToken?: string;
+
+  @Field({ nullable: true, defaultValue: true })
+  autoApproveQuiz?: boolean;
+
+  @Field({ nullable: true, defaultValue: true })
+  autoApproveWalk?: boolean;
+
+  @Field({ nullable: true, defaultValue: true })
+  requirePhotoApproval?: boolean;
+
+  @Field({ nullable: true, defaultValue: true })
+  notifyOnSubmit?: boolean;
+
+  @Field({ nullable: true, defaultValue: true })
+  autoLock?: boolean;
+
+  @Field({ nullable: true, defaultValue: false })
+  bedtimeMode?: boolean;
+
   @Field()
   createdAt!: string;
 }
