@@ -1,14 +1,20 @@
 // E2E test: parent sign-in → me → pairing → child sign-in → me as child
 // Run after `npm run start:dev` is up.
-// Web API key is safe to commit (public client identifier, not a secret).
+
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const admin = require('firebase-admin');
 admin.initializeApp({
   credential: admin.credential.cert(require('../firebase-service-account.json')),
 });
 
-const API_KEY = 'AIzaSyBHLVzn-sU8jo-pKdzL4h2mNkYzCWaiQAE';
-const BE_URL = 'http://localhost:3000/graphql';
+const API_KEY = process.env.FIREBASE_WEB_API_KEY;
+if (!API_KEY) {
+  console.error('FIREBASE_WEB_API_KEY missing in be/.env');
+  process.exit(1);
+}
+const BE_URL = process.env.BE_URL || 'http://localhost:3000/graphql';
 
 async function customTokenToIdToken(customToken) {
   const r = await fetch(

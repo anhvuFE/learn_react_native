@@ -1,12 +1,19 @@
 // Full E2E: parent → pair child → child submits → parent approves → reward issued → bank
 // Run: node scripts/test-full-flow.js
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
 const admin = require('firebase-admin');
 admin.initializeApp({
   credential: admin.credential.cert(require('../firebase-service-account.json')),
 });
 
-const API_KEY = 'AIzaSyBHLVzn-sU8jo-pKdzL4h2mNkYzCWaiQAE';
-const BE = 'http://localhost:3000/graphql';
+const API_KEY = process.env.FIREBASE_WEB_API_KEY;
+if (!API_KEY) {
+  console.error('FIREBASE_WEB_API_KEY missing in be/.env');
+  process.exit(1);
+}
+const BE = process.env.BE_URL || 'http://localhost:3000/graphql';
 
 async function ct2id(token) {
   const r = await fetch(
