@@ -2,6 +2,7 @@ import { useQuery } from "@apollo/client";
 import * as Application from "expo-application";
 import * as Clipboard from "expo-clipboard";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Linking,
@@ -21,6 +22,7 @@ import {
 import { colors, styles } from "../theme/styles";
 
 const AboutScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const { t } = useTranslation();
   const { data: meData } = useQuery<{
     me: { uid: string; email?: string; role: string };
   }>(ME_QUERY, { fetchPolicy: "cache-first" });
@@ -66,104 +68,96 @@ const AboutScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <View
           style={{
             alignItems: "center",
-            paddingVertical: 24,
-            marginBottom: 18,
+            paddingTop: 18,
+            paddingBottom: 22,
           }}
         >
           <View
             style={{
-              width: 84,
-              height: 84,
-              borderRadius: 22,
+              width: 76,
+              height: 76,
+              borderRadius: 20,
               backgroundColor: colors.accent,
               alignItems: "center",
               justifyContent: "center",
-              shadowColor: colors.accent,
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.3,
-              shadowRadius: 16,
-              elevation: 8,
             }}
           >
-            <Ionicons name="shield-checkmark" size={42} color="#fff" />
+            <Ionicons name="shield-checkmark" size={38} color="#fff" />
           </View>
           <Text
             style={{
-              fontSize: 26,
+              fontSize: 22,
               fontWeight: "700",
               color: colors.text,
               marginTop: 14,
-              letterSpacing: -0.5,
+              letterSpacing: -0.4,
             }}
           >
             ScreenMindr
           </Text>
           <Text
             style={{
-              fontSize: 13,
+              fontSize: 12,
               color: colors.muted,
-              marginTop: 4,
-              fontWeight: "600",
+              marginTop: 3,
+              fontWeight: "500",
+              letterSpacing: 0.1,
             }}
           >
-            v{Application.nativeApplicationVersion ?? "1.0.0"} ·{" "}
-            {Application.nativeBuildVersion ?? "demo"}
+            Version {Application.nativeApplicationVersion ?? "1.0.0"}
           </Text>
           <Text
             style={{
-              fontSize: 12,
+              fontSize: 13,
               color: colors.muted,
-              marginTop: 16,
+              marginTop: 14,
               textAlign: "center",
-              paddingHorizontal: 20,
-              lineHeight: 18,
+              paddingHorizontal: 24,
+              lineHeight: 19,
+              letterSpacing: -0.1,
             }}
           >
-            A learning prototype that lets parents convert chores and quizzes
-            into earned screen time, points, or cash for kids.
+            Turn chores and quizzes into earned screen time for kids.
           </Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Your usage</Text>
+        {/* Stats strip — Apple-style horizontal */}
         <View
           style={{
             flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 8,
-            marginBottom: 18,
+            backgroundColor: colors.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            paddingVertical: 14,
+            marginBottom: 22,
           }}
         >
-          <UsageTile
+          <StatCell
             value={`${tasksData?.tasks?.length ?? 0}`}
             label="Tasks"
-            color={colors.primary}
-            bg={colors.primarySoft}
-            icon="rocket"
           />
-          <UsageTile
+          <StatDivider />
+          <StatCell
             value={`${rewardsData?.myRewards?.length ?? 0}`}
             label="Rewards"
-            color={colors.points}
-            bg={colors.pointsSoft}
-            icon="trophy"
           />
-          <UsageTile
+          <StatDivider />
+          <StatCell
             value={`${appsData?.restrictedApps?.length ?? 0}`}
             label="Apps"
-            color={colors.text}
-            bg={colors.surfaceAlt}
-            icon="lock-closed"
           />
-          <UsageTile
+          <StatDivider />
+          <StatCell
             value={`${family?.childUids?.length ?? 0}`}
-            label="Children"
-            color={colors.accent}
-            bg={colors.accentSoft}
-            icon="people"
+            label={(family?.childUids?.length ?? 0) === 1 ? "Child" : "Kids"}
           />
         </View>
 
-        <Text style={styles.sectionLabel}>Your account</Text>
+        <Text style={styles.sectionLabel}>{t("settings.language")}</Text>
+        <LanguageRow />
+
+        <Text style={[styles.sectionLabel, { marginTop: 18 }]}>Your account</Text>
         <DetailRow
           label="Email"
           value={me?.email ?? "—"}
@@ -256,29 +250,18 @@ const AboutScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-const UsageTile: React.FC<{
-  value: string;
-  label: string;
-  color: string;
-  bg: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}> = ({ value, label, color, bg, icon }) => (
-  <View
-    style={{
-      width: "48.5%",
-      backgroundColor: bg,
-      borderRadius: 16,
-      padding: 14,
-    }}
-  >
-    <Ionicons name={icon} size={18} color={color} />
+const StatCell: React.FC<{ value: string; label: string }> = ({
+  value,
+  label,
+}) => (
+  <View style={{ flex: 1, alignItems: "center" }}>
     <Text
       style={{
         fontSize: 22,
         fontWeight: "700",
-        color,
-        marginTop: 6,
+        color: colors.text,
         letterSpacing: -0.5,
+        fontVariant: ["tabular-nums"],
       }}
     >
       {value}
@@ -286,15 +269,25 @@ const UsageTile: React.FC<{
     <Text
       style={{
         fontSize: 11,
-        fontWeight: "700",
-        color,
-        opacity: 0.85,
+        fontWeight: "600",
+        color: colors.muted,
         marginTop: 2,
+        letterSpacing: 0.2,
       }}
     >
       {label}
     </Text>
   </View>
+);
+
+const StatDivider: React.FC = () => (
+  <View
+    style={{
+      width: 1,
+      backgroundColor: colors.border,
+      marginVertical: 4,
+    }}
+  />
 );
 
 const DetailRow: React.FC<{
@@ -391,5 +384,54 @@ const StackRow: React.FC<{
     </Text>
   </View>
 );
+
+const LanguageRow: React.FC = () => {
+  const { i18n } = useTranslation();
+  const langs = [
+    { code: "en", label: "English" },
+    { code: "vi", label: "Tiếng Việt" },
+  ];
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        gap: 8,
+        marginBottom: 6,
+      }}
+    >
+      {langs.map((l) => {
+        const active = i18n.resolvedLanguage === l.code;
+        return (
+          <Pressable
+            key={l.code}
+            onPress={() => i18n.changeLanguage(l.code)}
+            style={({ pressed }) => [
+              {
+                flex: 1,
+                paddingVertical: 12,
+                borderRadius: 14,
+                alignItems: "center",
+                backgroundColor: active ? colors.text : colors.surface,
+                borderWidth: 1,
+                borderColor: active ? colors.text : colors.border,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <Text
+              style={{
+                color: active ? "#fff" : colors.text,
+                fontSize: 14,
+                fontWeight: "700",
+              }}
+            >
+              {l.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
 
 export default AboutScreen;

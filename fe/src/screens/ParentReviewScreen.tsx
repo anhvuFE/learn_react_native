@@ -1,9 +1,9 @@
 import { useMutation, useQuery } from "@apollo/client";
+import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   Text,
@@ -121,9 +121,11 @@ const PendingCard: React.FC<{
       >
         {showPhoto ? (
           <Image
-            source={{ uri: s.photoDownloadUrl as string }}
+            source={s.photoDownloadUrl as string}
             style={{ width: "100%", height: "100%" }}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={120}
             onError={() => setImageBroken(true)}
           />
         ) : (
@@ -327,7 +329,7 @@ const ParentReviewScreen: React.FC = () => {
     pendingSubmissions: PendingSub[];
   }>(PENDING_SUBMISSIONS, {
     fetchPolicy: "cache-and-network",
-    pollInterval: 15000,
+    pollInterval: 30000,
   });
 
   const [approveMut, { loading: approving }] = useMutation(APPROVE_SUBMISSION, {

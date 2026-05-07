@@ -39,7 +39,7 @@ const ScreenTimeSettingsScreen: React.FC<{ onClose: () => void }> = ({
 }) => {
   const { data: bankData } = useQuery<BankData>(MY_BANK_QUERY, {
     fetchPolicy: "cache-and-network",
-    pollInterval: 15000,
+    pollInterval: 30000,
   });
   const { data: rewardsData } = useQuery<{ myRewards: Reward[] }>(
     MY_REWARDS_QUERY,

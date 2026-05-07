@@ -1,4 +1,5 @@
 import "./src/lib/polyfills";
+import "./src/lib/i18n";
 import { ApolloProvider, useMutation, useQuery } from "@apollo/client";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -107,7 +108,7 @@ function MainApp() {
     };
   }>(MY_BANK_QUERY, {
     fetchPolicy: "cache-and-network",
-    pollInterval: 15000,
+    pollInterval: 30000,
     skip: isParent,
   });
 

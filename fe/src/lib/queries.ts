@@ -22,7 +22,15 @@ export const ME_QUERY = gql`
       notifyOnSubmit
       autoLock
       bedtimeMode
+      photoStoragePath
+      photoDownloadUrl
     }
+  }
+`;
+
+export const REQUEST_AVATAR_UPLOAD = gql`
+  mutation RequestAvatarUpload($contentType: String!) {
+    requestAvatarUpload(contentType: $contentType)
   }
 `;
 
@@ -291,6 +299,51 @@ export const APPROVE_SUBMISSION = gql`
       id
       status
       rewardId
+    }
+  }
+`;
+
+export const DELETE_MY_ACCOUNT = gql`
+  mutation DeleteMyAccount {
+    deleteMyAccount
+  }
+`;
+
+export const REWARD_ITEMS_QUERY = gql`
+  query RewardItems {
+    rewardItems {
+      id
+      name
+      description
+      emoji
+      costPoints
+      stock
+      active
+    }
+  }
+`;
+
+export const REDEEM_REWARD_ITEM = gql`
+  mutation RedeemRewardItem($id: ID!) {
+    redeemRewardItem(id: $id) {
+      id
+      itemName
+      costPoints
+      status
+      redeemedAt
+    }
+  }
+`;
+
+export const MY_REDEMPTIONS = gql`
+  query Redemptions {
+    redemptions {
+      id
+      itemName
+      costPoints
+      status
+      redeemedAt
+      fulfilledAt
     }
   }
 `;

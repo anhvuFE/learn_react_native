@@ -4,6 +4,7 @@ import {
   Alert,
   Animated,
   Easing,
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -13,6 +14,7 @@ import CountUp from "../components/CountUp";
 import { Ionicons } from "../components/icons";
 import { RewardIcon } from "../components/RewardPicker";
 import { feRewardType, feTaskType } from "../lib/normalize";
+import ShopScreen from "./ShopScreen";
 import {
   CHILD_BANK_QUERY,
   ME_QUERY,
@@ -195,13 +197,14 @@ const RewardsScreen: React.FC = () => {
 };
 
 const ChildRewardsView: React.FC = () => {
+  const [shopOpen, setShopOpen] = useState(false);
   const { data } = useQuery<BankData>(MY_BANK_QUERY, {
     fetchPolicy: "cache-and-network",
-    pollInterval: 15000,
+    pollInterval: 30000,
   });
   const { data: rewardsData } = useQuery<{ myRewards: RecentReward[] }>(
     MY_REWARDS_QUERY,
-    { fetchPolicy: "cache-and-network", pollInterval: 30000 },
+    { fetchPolicy: "cache-and-network", pollInterval: 60000 },
   );
 
   const pointsBank = data?.myBank?.points ?? 0;
@@ -342,12 +345,7 @@ const ChildRewardsView: React.FC = () => {
         reward="points"
         value={pointsBank}
         delay={150}
-        onPress={() =>
-          Alert.alert(
-            "Points",
-            `Total: ${pointsBank} pts.\n\nSpend in Reward shop (coming soon).`,
-          )
-        }
+        onPress={() => setShopOpen(true)}
       />
       <BankCard
         label="Cash (pending)"
@@ -531,6 +529,15 @@ const ChildRewardsView: React.FC = () => {
       <Text style={styles.footerNote}>
         * Cash payouts require parent approval and account setup.
       </Text>
+
+      <Modal
+        visible={shopOpen}
+        animationType="slide"
+        onRequestClose={() => setShopOpen(false)}
+        presentationStyle="pageSheet"
+      >
+        <ShopScreen onClose={() => setShopOpen(false)} />
+      </Modal>
     </ScrollView>
   );
 };
@@ -643,7 +650,7 @@ const ChildBankCard: React.FC<{
   }>(CHILD_BANK_QUERY, {
     variables: { childUid: child.uid },
     fetchPolicy: "cache-and-network",
-    pollInterval: 15000,
+    pollInterval: 30000,
   });
 
   const bank = data?.childBank;
@@ -844,4 +851,4 @@ const ChildBankCard: React.FC<{
   );
 };
 
-export default RewardsScreen;
+export default memo(RewardsScreen);

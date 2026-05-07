@@ -14,6 +14,7 @@ import { Ionicons } from "../components/icons";
 import { useAuth } from "../lib/auth-context";
 import {
   CREATE_PAIRING_CODE,
+  DELETE_MY_ACCOUNT,
   ME_QUERY,
   MY_FAMILY_QUERY,
   MY_PAIRING_CODES,
@@ -146,6 +147,31 @@ const MenuScreen: React.FC = () => {
       { text: "Cancel", style: "cancel" },
       { text: "Sign out", style: "destructive", onPress: () => signOut() },
     ]);
+
+  const [deleteAccount] = useMutation(DELETE_MY_ACCOUNT);
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      "Delete account?",
+      isParent
+        ? "This will permanently delete your family, all paired children, tasks, submissions, and rewards. Cannot be undone."
+        : "This will permanently delete your account and remove you from your family. Cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              await signOut();
+            } catch (e) {
+              Alert.alert("Failed", (e as Error).message);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const comingSoon = (label: string) =>
     Alert.alert(
@@ -450,6 +476,15 @@ const MenuScreen: React.FC = () => {
         destructive
         onPress={confirmSignOut}
       />
+      <MenuRow
+        index={7}
+        icon="trash"
+        iconBg={colors.dangerSoft}
+        iconColor={colors.danger}
+        label="Delete account"
+        destructive
+        onPress={confirmDeleteAccount}
+      />
 
       <Text style={styles.footerNote}>ScreenMindr · v1.0.0 · Demo build</Text>
 
@@ -519,4 +554,4 @@ const MenuScreen: React.FC = () => {
   );
 };
 
-export default MenuScreen;
+export default memo(MenuScreen);

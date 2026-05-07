@@ -36,9 +36,25 @@ const authLink = setContext(async (_op, prevCtx) => {
 
 export const apolloClient = new ApolloClient({
   link: from([authLink, httpLink]),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies: {
+      User: { keyFields: ["uid"] },
+      Family: { keyFields: ["id"] },
+      Task: { keyFields: ["id"] },
+      Submission: { keyFields: ["id"] },
+      Reward: { keyFields: ["id"] },
+      RestrictedApp: { keyFields: ["id"] },
+      Bank: { keyFields: ["uid"] },
+    },
+  }),
   defaultOptions: {
-    watchQuery: { fetchPolicy: "cache-and-network" },
+    // cache-first paints instantly from cache; queries that need freshness
+    // explicitly opt into cache-and-network or pollInterval.
+    watchQuery: {
+      fetchPolicy: "cache-first",
+      nextFetchPolicy: "cache-first",
+    },
+    query: { fetchPolicy: "cache-first" },
   },
 });
 

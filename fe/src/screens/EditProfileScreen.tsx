@@ -1,4 +1,7 @@
 import { useMutation, useQuery } from "@apollo/client";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -10,23 +13,75 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "../components/icons";
-import { ME_QUERY, UPDATE_MY_PROFILE } from "../lib/queries";
+import {
+  ME_QUERY,
+  REQUEST_AVATAR_UPLOAD,
+  UPDATE_MY_PROFILE,
+} from "../lib/queries";
 import { colors, styles } from "../theme/styles";
 
 const EditProfileScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { data } = useQuery<{
-    me: { uid: string; name?: string; email?: string };
+  const { data, refetch } = useQuery<{
+    me: {
+      uid: string;
+      name?: string;
+      email?: string;
+      photoDownloadUrl?: string;
+    };
   }>(ME_QUERY, { fetchPolicy: "cache-first" });
   const [updateProfile, { loading }] = useMutation(UPDATE_MY_PROFILE, {
     refetchQueries: [{ query: ME_QUERY }],
     awaitRefetchQueries: true,
   });
+  const [requestAvatarUpload] = useMutation<{ requestAvatarUpload: string }>(
+    REQUEST_AVATAR_UPLOAD,
+  );
 
   const [name, setName] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (data?.me?.name) setName(data.me.name);
   }, [data?.me?.name]);
+
+  const pickAvatar = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permission needed", "Allow photo access to set an avatar.");
+      return;
+    }
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (r.canceled) return;
+    const uri = r.assets?.[0]?.uri;
+    if (!uri) return;
+    try {
+      setUploading(true);
+      const contentType = uri.toLowerCase().endsWith(".png")
+        ? "image/png"
+        : "image/jpeg";
+      const res = await requestAvatarUpload({ variables: { contentType } });
+      const url = res.data?.requestAvatarUpload;
+      if (!url) throw new Error("No upload URL");
+      const upload = await FileSystem.uploadAsync(url, uri, {
+        httpMethod: "PUT",
+        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+        headers: { "Content-Type": contentType },
+      });
+      if (upload.status >= 300) {
+        throw new Error(`Upload ${upload.status}`);
+      }
+      await refetch();
+    } catch (e) {
+      Alert.alert("Avatar upload failed", (e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   async function save() {
     const trimmed = name.trim();
@@ -57,27 +112,70 @@ const EditProfileScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ alignItems: "center", marginBottom: 22 }}>
-          <View
-            style={{
-              width: 84,
-              height: 84,
-              borderRadius: 42,
-              backgroundColor: colors.accent,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+          <Pressable
+            onPress={pickAvatar}
+            disabled={uploading}
+            style={({ pressed }) => [
+              {
+                width: 92,
+                height: 92,
+                borderRadius: 46,
+                backgroundColor: colors.accent,
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            {data?.me?.photoDownloadUrl ? (
+              <Image
+                source={data.me.photoDownloadUrl}
+                style={{ width: "100%", height: "100%" }}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+            ) : (
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: 36,
+                  fontWeight: "700",
+                  letterSpacing: -0.5,
+                }}
+              >
+                {(name || data?.me?.email || "?")[0]?.toUpperCase()}
+              </Text>
+            )}
+            {uploading && (
+              <View
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundColor: "rgba(0,0,0,0.55)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ActivityIndicator color="#fff" />
+              </View>
+            )}
+          </Pressable>
+          <Pressable
+            onPress={pickAvatar}
+            disabled={uploading}
+            style={{ marginTop: 10 }}
           >
             <Text
               style={{
-                color: "#fff",
-                fontSize: 36,
+                fontSize: 12,
+                color: colors.accent,
                 fontWeight: "700",
-                letterSpacing: -0.5,
               }}
             >
-              {(name || data?.me?.email || "?")[0]?.toUpperCase()}
+              {uploading ? "Uploading…" : "Change photo"}
             </Text>
-          </View>
+          </Pressable>
         </View>
 
         <Text

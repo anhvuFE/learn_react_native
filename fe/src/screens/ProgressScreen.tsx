@@ -5,7 +5,7 @@ import CountUp from "../components/CountUp";
 import { Ionicons } from "../components/icons";
 import { REWARD_META } from "../components/RewardPicker";
 import { feRewardType, feTaskType } from "../lib/normalize";
-import { MY_BANK_QUERY, MY_REWARDS_QUERY } from "../lib/queries";
+import { MY_REWARDS_QUERY } from "../lib/queries";
 import { colors, styles } from "../theme/styles";
 import { RewardType } from "../types";
 
@@ -157,12 +157,9 @@ const HistoryRow = memo<{ item: HistoryItem; index: number }>(({
 HistoryRow.displayName = "HistoryRow";
 
 const ProgressScreen: React.FC = () => {
-  const { data: bankData } = useQuery(MY_BANK_QUERY, {
-    fetchPolicy: "cache-and-network",
-  });
   const { data: rewardsData } = useQuery<{ myRewards: RewardRow[] }>(
     MY_REWARDS_QUERY,
-    { fetchPolicy: "cache-and-network", pollInterval: 30000 },
+    { fetchPolicy: "cache-and-network", pollInterval: 60000 },
   );
 
   const history = useMemo<HistoryItem[]>(() => {
@@ -179,7 +176,6 @@ const ProgressScreen: React.FC = () => {
   const totalScreenTime = history
     .filter((h) => h.reward === "screen-time")
     .reduce((sum, h) => sum + h.amount, 0);
-  void bankData;
 
   // Real last-7-days bar chart, indexed by local day
   const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -383,4 +379,4 @@ const ProgressScreen: React.FC = () => {
   );
 };
 
-export default ProgressScreen;
+export default memo(ProgressScreen);
