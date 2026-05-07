@@ -45,6 +45,39 @@ export class CreateTaskInput {
   @Field({ nullable: true })
   familyId?: string;
 
+  @Field({ nullable: true })
+  assignedToChildUid?: string;
+
+  @Field(() => Int, { nullable: true })
+  walkTargetSteps?: number;
+
+  @Field(() => Int, { nullable: true })
+  walkTargetSeconds?: number;
+
+  @Field({ nullable: true })
+  videoTitle?: string;
+
+  @Field(() => Int, { nullable: true })
+  quizSecondsPerQuestion?: number;
+
+  @Field(() => [QuizQuestionInput], { nullable: true })
+  quiz?: QuizQuestionInput[];
+}
+
+@InputType()
+export class UpdateTaskInput {
+  @Field({ nullable: true })
+  title?: string;
+
+  @Field({ nullable: true })
+  description?: string;
+
+  @Field(() => RewardsInput, { nullable: true })
+  rewards?: RewardsInput;
+
+  @Field({ nullable: true })
+  assignedToChildUid?: string;
+
   @Field(() => Int, { nullable: true })
   walkTargetSteps?: number;
 

@@ -21,3 +21,6 @@ yarn-error.*
 # Firebase service account (NEVER commit)
 **/firebase-service-account*.json
 **/serviceAccountKey*.json
+
+# Claude Code local state
+.claude/

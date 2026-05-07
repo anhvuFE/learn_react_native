@@ -11,22 +11,20 @@ admin.initializeApp({
 const auth = admin.auth();
 const db = admin.firestore();
 
-const PARENTS = [
-  {
-    email: 'vuxuananh22@gmail.com',
-    password: '123456',
-    name: 'Vu Xuan Anh',
-    childName: 'Alex',
-    withHistory: true,
-  },
-  {
-    email: 'vuxuananh23@gmail.com',
-    password: '123456',
-    name: 'Vu Xuan Anh 2',
-    childName: 'Sam',
-    withHistory: false,
-  },
-];
+const PARENT = {
+  email: 'vuxuananh22@gmail.com',
+  password: '123456',
+  name: 'Vu Xuan Anh',
+  childName: 'Alex',
+  withHistory: true,
+};
+
+// Real child account that can sign in with email+password
+const CHILD_WITH_EMAIL = {
+  email: 'vuxuananh23@gmail.com',
+  password: '123456',
+  name: 'Anh Em',
+};
 
 const DEFAULT_APPS = [
   { appId: 'tiktok', name: 'TikTok', packageName: 'com.zhiliaoapp.musically' },
@@ -442,19 +440,60 @@ async function seedParent({ email, password, name, childName, withHistory }) {
   return { parent, familyId, child: childAuth };
 }
 
+async function attachEmailChild({ email, password, name }, parentUid, familyId) {
+  console.log(`\n=== Attaching child ${email} to parent family ===`);
+
+  // If user already exists (e.g. from previous run as a parent), wipe its old data first
+  let existing = null;
+  try {
+    existing = await auth.getUserByEmail(email);
+    await clearParentData(existing.uid);
+  } catch (e) {
+    if (e.code !== 'auth/user-not-found') throw e;
+  }
+
+  const childAuth = await ensureAuthUser(email, password, name);
+
+  await db.collection('users').doc(childAuth.uid).set({
+    email,
+    name,
+    role: 'child',
+    familyId,
+    parentUid,
+    createdAt: isoDaysAgo(3),
+  });
+
+  await db
+    .collection('families')
+    .doc(familyId)
+    .update({
+      childUids: admin.firestore.FieldValue.arrayUnion(childAuth.uid),
+    });
+
+  // Set custom claim so auth guard reads role/familyId without an extra Firestore round trip
+  await auth.setCustomUserClaims(childAuth.uid, {
+    role: 'child',
+    familyId,
+  });
+
+  console.log(`  ＋ child ${name} attached as ${childAuth.uid}`);
+  return childAuth;
+}
+
 (async () => {
   console.log('Cleaning legacy test data…');
   await deleteTestParents();
 
-  for (const cfg of PARENTS) {
-    await seedParent(cfg);
-  }
+  const { parent, familyId } = await seedParent(PARENT);
+
+  await attachEmailChild(CHILD_WITH_EMAIL, parent.uid, familyId);
 
   console.log('\n✓ Seed complete');
-  console.log('Sign in (FE) with:');
-  for (const p of PARENTS) {
-    console.log(`  • ${p.email} / ${p.password}`);
-  }
+  console.log('Sign in:');
+  console.log(`  • Parent (PWA + mobile): ${PARENT.email} / ${PARENT.password}`);
+  console.log(
+    `  • Child (mobile, use Parent tab): ${CHILD_WITH_EMAIL.email} / ${CHILD_WITH_EMAIL.password}`,
+  );
   process.exit(0);
 })().catch((e) => {
   console.error('\n✗ FAIL:', e);

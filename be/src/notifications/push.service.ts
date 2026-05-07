@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { FirebaseService } from '../firebase/firebase.service';
 import { UsersService } from '../users/users.service';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
@@ -14,13 +15,54 @@ interface PushPayload {
 export class PushService {
   private readonly logger = new Logger(PushService.name);
 
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly firebase: FirebaseService,
+  ) {}
 
   async send(payload: PushPayload): Promise<void> {
     const user = await this.users.findByUid(payload.uid);
-    const token = user?.pushToken;
+    if (!user) return;
+
+    // Send via FCM (web) if a webPushToken is registered
+    if (user.webPushToken) {
+      try {
+        const messaging = (
+          await import('firebase-admin/messaging')
+        ).getMessaging();
+        await messaging.send({
+          token: user.webPushToken,
+          notification: {
+            title: payload.title,
+            body: payload.body,
+          },
+          data: Object.fromEntries(
+            Object.entries(payload.data ?? {}).map(([k, v]) => [
+              k,
+              String(v),
+            ]),
+          ),
+        });
+        this.logger.log(
+          `FCM web push sent to ${payload.uid}: ${payload.title}`,
+        );
+      } catch (e) {
+        const msg = (e as Error).message;
+        this.logger.warn(`FCM web push failed for ${payload.uid}: ${msg}`);
+        if (
+          msg.includes('registration-token-not-registered') ||
+          msg.includes('Requested entity was not found')
+        ) {
+          await this.users.update(payload.uid, { webPushToken: null });
+        }
+      }
+    }
+
+    const token = user.pushToken;
     if (!token) {
-      this.logger.debug(`No push token for ${payload.uid} — skip`);
+      if (!user.webPushToken) {
+        this.logger.debug(`No push token for ${payload.uid} — skip`);
+      }
       return;
     }
 

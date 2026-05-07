@@ -73,4 +73,8 @@ export class FirebaseService implements OnModuleInit {
     }
     return admin.storage();
   }
+
+  get fieldValue() {
+    return admin.firestore.FieldValue;
+  }
 }

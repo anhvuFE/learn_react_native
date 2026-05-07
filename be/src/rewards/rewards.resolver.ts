@@ -58,6 +58,19 @@ export class RewardsResolver {
     return this.rewards.getBank(childUid);
   }
 
+  @Query(() => [Reward], { name: 'childRewards', description: 'Parent: list a child rewards history' })
+  async childRewards(
+    @CurrentUser() user: User,
+    @Args('childUid') childUid: string,
+    @Args('limit', { type: () => Int, nullable: true, defaultValue: 50 })
+    limit: number,
+  ): Promise<Reward[]> {
+    if (user.role !== UserRole.PARENT) {
+      throw new ForbiddenException('Only parents can read child rewards');
+    }
+    return this.rewards.listForChild(childUid, limit);
+  }
+
   @Mutation(() => Reward)
   async cancelReward(
     @CurrentUser() user: User,

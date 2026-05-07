@@ -30,6 +30,12 @@ export class User {
   @Field({ nullable: true })
   pushToken?: string;
 
+  @Field({ nullable: true })
+  webPushToken?: string;
+
+  @Field({ nullable: true, description: 'Storage path of avatar' })
+  photoStoragePath?: string;
+
   @Field({ nullable: true, defaultValue: true })
   autoApproveQuiz?: boolean;
 

@@ -83,4 +83,64 @@ export class UsersService {
     if (!found) throw new Error('User not found after update');
     return found;
   }
+
+  async deleteAccount(user: User): Promise<void> {
+    const auth = this.firebase.auth;
+    const db = this.firebase.firestore;
+
+    if (user.role === 'parent' && user.familyId) {
+      const familyRef = db.collection('families').doc(user.familyId);
+      const fam = await familyRef.get();
+      const childUids: string[] = (fam.data()?.childUids ?? []) as string[];
+
+      // Delete all children (auth + firestore profile)
+      for (const childUid of childUids) {
+        await auth.deleteUser(childUid).catch(() => {});
+        await db.collection('users').doc(childUid).delete().catch(() => {});
+      }
+
+      // Cascade family-scoped collections
+      for (const colName of [
+        'tasks',
+        'submissions',
+        'rewards',
+        'restrictedApps',
+        'pairingCodes',
+      ]) {
+        const snap = await db
+          .collection(colName)
+          .where('familyId', '==', user.familyId)
+          .get();
+        const batch = db.batch();
+        snap.docs.forEach((d) => batch.delete(d.ref));
+        if (snap.size > 0) await batch.commit();
+      }
+
+      await familyRef.delete().catch(() => {});
+    } else if (user.role === 'child' && user.familyId) {
+      // Remove this child from the family.childUids array
+      await db
+        .collection('families')
+        .doc(user.familyId)
+        .update({
+          childUids: this.firebase.fieldValue.arrayRemove(user.uid),
+        })
+        .catch(() => {});
+
+      // Delete this child's submissions + rewards
+      for (const colName of ['submissions', 'rewards']) {
+        const snap = await db
+          .collection(colName)
+          .where('childUid', '==', user.uid)
+          .get();
+        const batch = db.batch();
+        snap.docs.forEach((d) => batch.delete(d.ref));
+        if (snap.size > 0) await batch.commit();
+      }
+    }
+
+    // Finally drop the user's own profile + auth identity
+    await this.col.doc(user.uid).delete().catch(() => {});
+    await auth.deleteUser(user.uid).catch(() => {});
+  }
 }

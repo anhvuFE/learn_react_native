@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
-import { CreateTaskInput } from './task.input';
+import { CreateTaskInput, UpdateTaskInput } from './task.input';
 import { Task, TaskStatus } from './task.model';
 
 const COLLECTION = 'tasks';
@@ -38,6 +38,17 @@ export class TasksService {
 
   async setStatus(id: string, status: TaskStatus): Promise<Task> {
     await this.col.doc(id).update({ status });
+    return this.findOne(id);
+  }
+
+  async update(id: string, input: UpdateTaskInput): Promise<Task> {
+    const cleaned: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(input)) {
+      if (v !== undefined) cleaned[k] = v;
+    }
+    if (Object.keys(cleaned).length > 0) {
+      await this.col.doc(id).update(cleaned);
+    }
     return this.findOne(id);
   }
 

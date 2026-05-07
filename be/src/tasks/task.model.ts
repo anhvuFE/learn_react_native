@@ -66,6 +66,9 @@ export class Task {
   @Field({ nullable: true })
   familyId?: string;
 
+  @Field({ nullable: true })
+  assignedToChildUid?: string;
+
   @Field(() => Int, { nullable: true })
   walkTargetSteps?: number;
 
