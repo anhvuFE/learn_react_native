@@ -216,7 +216,7 @@ const MissionComplete: React.FC<Props> = ({ mission, onContinue }) => {
       }),
     ]).start();
 
-    Animated.loop(
+    const tiltLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(trophyTilt, {
           toValue: 1,
@@ -237,7 +237,11 @@ const MissionComplete: React.FC<Props> = ({ mission, onContinue }) => {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
+    );
+    tiltLoop.start();
+    return () => {
+      tiltLoop.stop();
+    };
   }, [
     cardOpacity,
     cardTranslate,
@@ -288,7 +292,7 @@ const MissionComplete: React.FC<Props> = ({ mission, onContinue }) => {
         }}
       />
 
-      <Confetti count={56} />
+      <Confetti count={32} />
       <ScrollView
         contentContainerStyle={styles.missionContainer}
         showsVerticalScrollIndicator={false}

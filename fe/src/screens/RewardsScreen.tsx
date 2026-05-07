@@ -47,7 +47,7 @@ const BankCard = memo<{
       }),
     ]).start();
 
-    Animated.loop(
+    const shimmerLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(shimmer, {
           toValue: 1,
@@ -62,7 +62,9 @@ const BankCard = memo<{
         }),
         Animated.delay(1500),
       ]),
-    ).start();
+    );
+    shimmerLoop.start();
+    return () => shimmerLoop.stop();
   }, [opacity, translateY, shimmer, delay]);
 
   const shimmerX = shimmer.interpolate({

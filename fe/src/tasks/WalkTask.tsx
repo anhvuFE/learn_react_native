@@ -34,7 +34,7 @@ const WalkScene: React.FC<{
   const sunSpin = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const l1 = Animated.loop(
       Animated.sequence([
         Animated.timing(cloud1, {
           toValue: 1,
@@ -47,8 +47,8 @@ const WalkScene: React.FC<{
           useNativeDriver: true,
         }),
       ]),
-    ).start();
-    Animated.loop(
+    );
+    const l2 = Animated.loop(
       Animated.sequence([
         Animated.delay(1500),
         Animated.timing(cloud2, {
@@ -62,15 +62,23 @@ const WalkScene: React.FC<{
           useNativeDriver: true,
         }),
       ]),
-    ).start();
-    Animated.loop(
+    );
+    const l3 = Animated.loop(
       Animated.timing(sunSpin, {
         toValue: 1,
         duration: 18000,
         easing: Easing.linear,
         useNativeDriver: true,
       }),
-    ).start();
+    );
+    l1.start();
+    l2.start();
+    l3.start();
+    return () => {
+      l1.stop();
+      l2.stop();
+      l3.stop();
+    };
   }, [cloud1, cloud2, sunSpin]);
 
   const cloud1X = cloud1.interpolate({

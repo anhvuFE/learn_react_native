@@ -44,7 +44,7 @@ function formatTimeAgo(ts: number) {
 const FlameIcon: React.FC = () => {
   const flicker = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(flicker, {
           toValue: 1,
@@ -57,7 +57,9 @@ const FlameIcon: React.FC = () => {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, [flicker]);
   const scale = flicker.interpolate({
     inputRange: [0, 1],

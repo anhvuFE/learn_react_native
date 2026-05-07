@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { Text, TextProps } from "react-native";
 
 interface Props extends Omit<TextProps, "children"> {
@@ -7,14 +7,20 @@ interface Props extends Omit<TextProps, "children"> {
   format?: (n: number) => string;
 }
 
+const defaultFormat = (n: number) => Math.round(n).toString();
+
 const CountUp: React.FC<Props> = ({
   value,
   duration = 600,
   format,
   ...rest
 }) => {
-  const [display, setDisplay] = useState(value);
+  const formatRef = useRef(format ?? defaultFormat);
+  formatRef.current = format ?? defaultFormat;
+
+  const [display, setDisplay] = useState(() => formatRef.current(value));
   const fromRef = useRef(value);
+  const lastDisplayRef = useRef(display);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -26,7 +32,11 @@ const CountUp: React.FC<Props> = ({
       const t = Math.min(1, elapsed / duration);
       const eased = 1 - Math.pow(1 - t, 3);
       const v = from + (value - from) * eased;
-      setDisplay(v);
+      const next = formatRef.current(v);
+      if (next !== lastDisplayRef.current) {
+        lastDisplayRef.current = next;
+        setDisplay(next);
+      }
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
@@ -39,11 +49,7 @@ const CountUp: React.FC<Props> = ({
     };
   }, [value, duration]);
 
-  return (
-    <Text {...rest}>
-      {format ? format(display) : Math.round(display).toString()}
-    </Text>
-  );
+  return <Text {...rest}>{display}</Text>;
 };
 
-export default CountUp;
+export default memo(CountUp);

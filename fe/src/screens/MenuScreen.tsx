@@ -91,7 +91,7 @@ const MenuScreen: React.FC = () => {
       }),
     ]).start();
 
-    Animated.loop(
+    const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(avatarPulse, {
           toValue: 1.05,
@@ -104,7 +104,9 @@ const MenuScreen: React.FC = () => {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
+    );
+    pulseLoop.start();
+    return () => pulseLoop.stop();
   }, [profileOpacity, profileScale, avatarPulse]);
 
   return (

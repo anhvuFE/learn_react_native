@@ -1,26 +1,54 @@
-# React Native
-Template này được sử dụng cho video hướng dẫn React Native (basic) của tác giả Hỏi Dân IT (Eric)
+# ScreenMindr
 
-### Môi trường chạy dự án: Node.js v20.14.0
-https://nodejs.org/download/release/v20.14.0/
+Parental screen-time control prototype.
 
-## Về tác giả
-Mọi thông tin về Tác giả Hỏi Dân IT, các bạn có thể tìm kiếm tại đây:
+## Structure
 
-Website chính thức: https://hoidanit.vn/
+```
+.
+├── fe/          # Expo React Native child app
+└── be/          # NestJS GraphQL API + Firebase Firestore
+```
 
-Youtube “Hỏi Dân IT” : https://www.youtube.com/@hoidanit
+## Frontend (`fe/`)
 
-Tiktok “Hỏi Dân IT” :  https://www.tiktok.com/@hoidanit
+Expo SDK 51 + React Native 0.74 + TypeScript.
 
-Fanpage “Hỏi Dân IT” : https://www.facebook.com/askITwithERIC/
+```bash
+cd fe
+npm install
+npm run android      # or: npm run ios / npm run web
+```
 
-Udemy Hỏi Dân IT: https://www.udemy.com/user/eric-7039/
+See `fe/README.MD` for details.
 
-===
+## Backend (`be/`)
 
-Các bước cài đặt: (chế độ development)
-1. clone code
-2. cài đặt thư viện: npm i
-3. Update file .env (nếu cần thiết)
-4. Chạy dự án:  npm start | hoặc | npm run dev 
+NestJS 10 + Apollo GraphQL (code-first) + Firebase Admin (Firestore).
+
+### Setup
+
+1. Create a Firebase project at <https://console.firebase.google.com>.
+2. Enable **Firestore Database** (Native mode).
+3. Project Settings → **Service accounts** → **Generate new private key** → save as `be/firebase-service-account.json` (gitignored).
+4. Install + run:
+   ```bash
+   cd be
+   npm install
+   npm run start:dev
+   ```
+5. GraphQL Playground: <http://localhost:3000/graphql>
+
+### Env
+
+Copy `be/.env.example` to `be/.env`:
+
+```
+PORT=3000
+FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
+```
+
+## Notes
+
+- Service account JSON is **gitignored** — never commit it.
+- Frontend connects to backend via `EXPO_PUBLIC_API_URL` env (set in `fe/.env` or `app.json` extra).

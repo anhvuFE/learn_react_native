@@ -1,39 +1,23 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# OS
+.DS_Store
+*.swp
+*.swo
 
-# dependencies
-node_modules/
+# Editor
+.vscode/
+.idea/
 
-# Expo
-.expo/
-dist/
-web-build/
-
-# Native
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
+# Logs
+*.log
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
-.DS_Store
-*.pem
+# Env files (allow .env.example)
+.env
+.env.local
+.env.*.local
 
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-# editor swap files
-*.swp
-*.swo
+# Firebase service account (NEVER commit)
+**/firebase-service-account*.json
+**/serviceAccountKey*.json

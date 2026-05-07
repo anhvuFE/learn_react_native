@@ -119,7 +119,7 @@ const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
       }),
     ]).start();
 
-    Animated.loop(
+    const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(lockPulse, {
           toValue: 1,
@@ -134,9 +134,9 @@ const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
+    );
 
-    Animated.loop(
+    const glowLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(lockGlow, {
           toValue: 1,
@@ -150,7 +150,15 @@ const LockScreen: React.FC<Props> = ({ tasks, onTaskPress }) => {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
+    );
+
+    pulseLoop.start();
+    glowLoop.start();
+
+    return () => {
+      pulseLoop.stop();
+      glowLoop.stop();
+    };
   }, [greetOpacity, statusOpacity, statusTranslate, lockPulse, lockGlow]);
 
   const lockScale = lockPulse.interpolate({
