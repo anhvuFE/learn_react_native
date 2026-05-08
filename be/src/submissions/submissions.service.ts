@@ -113,6 +113,20 @@ export class SubmissionsService {
     return (doc.data() as { parentUid?: string }).parentUid ?? null;
   }
 
+  private async isWithinBedtimeFor(familyId?: string): Promise<boolean> {
+    if (!familyId) return false;
+    const parentUid = await this.parentUidForFamily(familyId);
+    if (!parentUid) return false;
+    const parentDoc = await this.firebase.firestore
+      .collection('users')
+      .doc(parentUid)
+      .get();
+    const bedtime = (parentDoc.data() as { bedtimeMode?: boolean })?.bedtimeMode;
+    if (!bedtime) return false;
+    const hour = new Date().getHours();
+    return hour >= 21 || hour < 7;
+  }
+
   async submitTimer(
     childUid: string,
     familyId: string,
@@ -217,6 +231,17 @@ export class SubmissionsService {
     const submission = { id: doc.id, ...doc.data() } as Submission;
     if (submission.status !== SubmissionStatus.PENDING) {
       throw new BadRequestException(`Already ${submission.status}`);
+    }
+
+    // Bedtime mode: if parent enabled bedtime and current local hour is 21:00–07:00,
+    // block screen-time reward grants. Points/cash still allowed.
+    if (submission.chosenReward === RewardType.SCREEN_TIME) {
+      const blocked = await this.isWithinBedtimeFor(submission.familyId);
+      if (blocked) {
+        throw new BadRequestException(
+          'Screen-time rewards are paused during bedtime hours (9 PM – 7 AM). Approve again later or pick a different reward.',
+        );
+      }
     }
 
     const task = await this.tasks.findOne(submission.taskId);

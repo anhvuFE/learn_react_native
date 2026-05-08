@@ -1,5 +1,5 @@
 import { Field, Float, InputType, Int } from '@nestjs/graphql';
-import { TaskType } from './task.model';
+import { TaskRecurrence, TaskType } from './task.model';
 
 @InputType()
 export class RewardsInput {
@@ -48,6 +48,9 @@ export class CreateTaskInput {
   @Field({ nullable: true })
   assignedToChildUid?: string;
 
+  @Field(() => TaskRecurrence, { nullable: true, defaultValue: TaskRecurrence.NONE })
+  recurrence?: TaskRecurrence;
+
   @Field(() => Int, { nullable: true })
   walkTargetSteps?: number;
 
@@ -77,6 +80,9 @@ export class UpdateTaskInput {
 
   @Field({ nullable: true })
   assignedToChildUid?: string;
+
+  @Field(() => TaskRecurrence, { nullable: true })
+  recurrence?: TaskRecurrence;
 
   @Field(() => Int, { nullable: true })
   walkTargetSteps?: number;

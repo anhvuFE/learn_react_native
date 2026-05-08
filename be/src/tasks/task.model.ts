@@ -13,8 +13,15 @@ export enum TaskStatus {
   REJECTED = 'rejected',
 }
 
+export enum TaskRecurrence {
+  NONE = 'none',
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+}
+
 registerEnumType(TaskType, { name: 'TaskType' });
 registerEnumType(TaskStatus, { name: 'TaskStatus' });
+registerEnumType(TaskRecurrence, { name: 'TaskRecurrence' });
 
 @ObjectType()
 export class Rewards {
@@ -68,6 +75,9 @@ export class Task {
 
   @Field({ nullable: true })
   assignedToChildUid?: string;
+
+  @Field(() => TaskRecurrence, { defaultValue: TaskRecurrence.NONE })
+  recurrence?: TaskRecurrence;
 
   @Field(() => Int, { nullable: true })
   walkTargetSteps?: number;
