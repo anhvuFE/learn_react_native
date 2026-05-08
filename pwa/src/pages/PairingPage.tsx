@@ -5,8 +5,8 @@ import {
   Button,
   Card,
   Empty,
+  Hero,
   Input,
-  PageHeader,
   SectionLabel,
 } from "../components/ui";
 import {
@@ -45,8 +45,21 @@ export default function PairingPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Pair a device"
+      <div className="mb-3.5">
+        <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+          DEVICE SETUP
+        </div>
+        <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+          Pair a device
+        </h1>
+      </div>
+
+      <Hero
+        accent="indigo"
+        icon={<KeyRound size={20} color="#fff" strokeWidth={2.2} />}
+        label="Active codes"
+        value={`${codes.length}`}
+        valueSuffix={codes.length === 1 ? "code" : "codes"}
         subtitle="Generate a 6-character code, then enter it on your child's phone"
       />
 

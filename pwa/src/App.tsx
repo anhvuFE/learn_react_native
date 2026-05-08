@@ -8,7 +8,7 @@ import ChildrenPage from "./pages/ChildrenPage";
 import DashboardPage from "./pages/DashboardPage";
 import PairingPage from "./pages/PairingPage";
 import SettingsPage from "./pages/SettingsPage";
-import ShopPage from "./pages/ShopPage";
+// ShopPage removed from MVP
 import SignInPage from "./pages/SignInPage";
 import SubmissionsPage from "./pages/SubmissionsPage";
 import TasksPage from "./pages/TasksPage";
@@ -43,7 +43,6 @@ function App() {
         <Route path="/children" element={<ChildrenPage />} />
         <Route path="/children/:uid" element={<ChildDetailPage />} />
         <Route path="/apps" element={<AppsPage />} />
-        <Route path="/shop" element={<ShopPage />} />
         <Route path="/pairing" element={<PairingPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

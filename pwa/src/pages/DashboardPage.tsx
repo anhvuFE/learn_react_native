@@ -1,7 +1,10 @@
 import { useQuery } from "@apollo/client";
 import {
   AppWindow,
+  ChevronRight,
   Inbox,
+  Lock,
+  Mail,
   Sparkles,
   Timer,
   Users,
@@ -12,13 +15,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import {
   Button,
-  Card,
-  PageHeader,
-  SectionLabel,
-  StatTile,
+  GroupedCard,
+  Hero,
+  Section,
+  Sep,
 } from "../components/ui";
 import { cn } from "../lib/cn";
 import {
+  CHILD_BANK_QUERY,
   MY_FAMILY_QUERY,
   PENDING_SUBMISSIONS,
   RESTRICTED_APPS_QUERY,
@@ -37,9 +41,9 @@ export default function DashboardPage() {
   const nav = useNavigate();
   const { t } = useTranslation();
   const { data: famData } = useQuery<FamilyData>(MY_FAMILY_QUERY);
-  const { data: tasksData } = useQuery<{ tasks: { id: string; status: string }[] }>(
-    TASKS_QUERY,
-  );
+  const { data: tasksData } = useQuery<{
+    tasks: { id: string; status: string }[];
+  }>(TASKS_QUERY);
   const { data: pendData } = useQuery<{
     pendingSubmissions: { id: string; childUid: string; submittedAt: string }[];
   }>(PENDING_SUBMISSIONS, { pollInterval: 30000 });
@@ -55,153 +59,199 @@ export default function DashboardPage() {
 
   const availableTasks = tasks.filter((t) => t.status === "available").length;
 
+  const heroAccent = pending.length > 0 ? "orange" : "indigo";
+
   return (
     <div>
-      <PageHeader
-        title={t("dashboard.title")}
-        subtitle={t("dashboard.subtitle")}
+      {/* Greeting */}
+      <div className="mb-3.5">
+        <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+          {t("nav.parentDashboard").toUpperCase()}
+        </div>
+        <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+          {t("dashboard.title")}
+        </h1>
+      </div>
+
+      {/* Hero — pending review focus */}
+      <Hero
+        accent={heroAccent}
+        icon={
+          pending.length > 0 ? (
+            <Mail size={20} color="#fff" strokeWidth={2.2} />
+          ) : (
+            <Sparkles size={20} color="#fff" strokeWidth={2.2} />
+          )
+        }
+        label={
+          pending.length > 0 ? "Waiting for review" : "All caught up"
+        }
+        value={`${pending.length}`}
+        valueSuffix={pending.length === 1 ? "submission" : "submissions"}
+        subtitle={
+          pending.length > 0
+            ? "Tap Submissions to approve or reject"
+            : "Kids will appear here when they submit a mission"
+        }
+        chips={[
+          {
+            icon: <Users size={11} color="rgba(255,255,255,0.85)" strokeWidth={2.4} />,
+            label: "Kids",
+            value: `${children.length}`,
+          },
+          {
+            icon: <Sparkles size={11} color="rgba(255,255,255,0.85)" strokeWidth={2.4} />,
+            label: "Active",
+            value: `${availableTasks}`,
+          },
+          {
+            icon: <Lock size={11} color="rgba(255,255,255,0.85)" strokeWidth={2.4} />,
+            label: "Locked apps",
+            value: `${apps.length}`,
+          },
+        ]}
       />
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        <StatTile
-          label={t("dashboard.children")}
-          value={`${children.length}`}
-          icon={<Users size={16} className="text-accent" strokeWidth={2.4} />}
-          accent="accent"
-        />
-        <StatTile
-          label={t("dashboard.pendingReview")}
-          value={`${pending.length}`}
-          icon={<Inbox size={16} className="text-warning" strokeWidth={2.4} />}
-          accent="warning"
-        />
-        <StatTile
-          label={t("dashboard.activeMissions")}
-          value={`${availableTasks}`}
-          icon={
-            <Sparkles size={16} className="text-primary" strokeWidth={2.4} />
-          }
-          accent="primary"
-        />
-        <StatTile
-          label={t("dashboard.appsLocked")}
-          value={`${apps.length}`}
-          icon={<AppWindow size={16} className="text-text" strokeWidth={2.4} />}
-        />
-      </div>
-
       {pending.length > 0 && (
-        <Card className="mb-6 px-5 py-4 bg-warning/10 border-warning/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[14px] font-semibold text-text">
-                {pending.length} submission{pending.length === 1 ? "" : "s"}{" "}
-                waiting for your review
+        <Section title="Pending review" rightLabelColor="#FF9500" rightLabel={`${pending.length} waiting`}>
+          <GroupedCard>
+            <button
+              onClick={() => nav("/submissions")}
+              className="w-full flex items-center px-3.5 py-3 hover:bg-black/[0.04] transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-[9px] bg-warning-soft grid place-items-center mr-3 shrink-0">
+                <Inbox size={17} className="text-warning" strokeWidth={2.4} />
               </div>
-              <div className="text-[12px] text-muted mt-0.5">
-                Approve or reject before kids can earn rewards
+              <div className="flex-1">
+                <div className="text-[15px] font-medium text-text tracking-[-0.2px]">
+                  {pending.length} submission{pending.length === 1 ? "" : "s"} to review
+                </div>
+                <div className="text-[12px] text-muted mt-0.5">
+                  Approve or reject before kids can earn rewards
+                </div>
               </div>
-            </div>
-            <Button onClick={() => nav("/submissions")}>Review</Button>
-          </div>
-        </Card>
+              <ChevronRight size={16} className="text-[#C7C7CC]" />
+            </button>
+          </GroupedCard>
+        </Section>
       )}
 
-      <SectionLabel>Children</SectionLabel>
-      {children.length === 0 ? (
-        <Card className="p-6 text-center">
-          <div className="text-[14px] font-semibold text-text">
-            No children paired yet
-          </div>
-          <div className="text-[12px] text-muted mt-1 mb-4">
-            Generate a pairing code to invite your child's device
-          </div>
-          <Button onClick={() => nav("/pairing")}>Generate code</Button>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          {children.map((c) => (
-            <ChildSummaryCard
-              key={c.uid}
-              uid={c.uid}
-              name={c.name ?? c.email?.split("@")[0] ?? "Child"}
-              onClick={() => nav(`/children/${c.uid}`)}
-              pendingCount={
-                pending.filter((p) => p.childUid === c.uid).length
-              }
-            />
-          ))}
-        </div>
-      )}
+      {/* Children */}
+      <Section
+        title="Children"
+        rightLabel={children.length > 0 ? `${children.length}` : undefined}
+      >
+        {children.length === 0 ? (
+          <GroupedCard className="px-6 py-10 flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-accent-soft grid place-items-center mb-3">
+              <Users size={22} className="text-accent" strokeWidth={2.2} />
+            </div>
+            <div className="text-[15px] font-semibold text-text">
+              No children paired yet
+            </div>
+            <div className="text-[12px] text-muted mt-1 mb-4 max-w-xs">
+              Generate a pairing code to invite your child&apos;s device
+            </div>
+            <Button onClick={() => nav("/pairing")}>Generate code</Button>
+          </GroupedCard>
+        ) : (
+          <GroupedCard>
+            {children.map((c, i) => (
+              <div key={c.uid}>
+                <ChildRow
+                  uid={c.uid}
+                  name={c.name ?? c.email?.split("@")[0] ?? "Child"}
+                  pendingCount={
+                    pending.filter((p) => p.childUid === c.uid).length
+                  }
+                  onClick={() => nav(`/children/${c.uid}`)}
+                />
+                {i < children.length - 1 && <Sep />}
+              </div>
+            ))}
+          </GroupedCard>
+        )}
+      </Section>
 
-      <SectionLabel>Quick actions</SectionLabel>
-      <div className="grid grid-cols-3 gap-3">
-        <Card
-          onClick={() => nav("/tasks")}
-          className="p-5 flex items-start gap-3"
-        >
-          <div className="w-10 h-10 rounded-xl bg-primary-soft grid place-items-center">
-            <Sparkles size={18} className="text-primary" strokeWidth={2.4} />
-          </div>
-          <div>
-            <div className="text-[14px] font-semibold text-text">Add mission</div>
-            <div className="text-[12px] text-muted mt-0.5">
-              Create a custom task with rewards
-            </div>
-          </div>
-        </Card>
-        <Card
-          onClick={() => nav("/apps")}
-          className="p-5 flex items-start gap-3"
-        >
-          <div className="w-10 h-10 rounded-xl bg-accent-soft grid place-items-center">
-            <AppWindow size={18} className="text-accent" strokeWidth={2.4} />
-          </div>
-          <div>
-            <div className="text-[14px] font-semibold text-text">
-              Manage apps
-            </div>
-            <div className="text-[12px] text-muted mt-0.5">
-              Choose which apps require earned time
-            </div>
-          </div>
-        </Card>
-        <Card
-          onClick={() => nav("/pairing")}
-          className="p-5 flex items-start gap-3"
-        >
-          <div className="w-10 h-10 rounded-xl bg-points-soft grid place-items-center">
-            <Wallet size={18} className="text-points" strokeWidth={2.4} />
-          </div>
-          <div>
-            <div className="text-[14px] font-semibold text-text">
-              Pair a device
-            </div>
-            <div className="text-[12px] text-muted mt-0.5">
-              Generate a 6-char code for a child phone
-            </div>
-          </div>
-        </Card>
-      </div>
+      {/* Quick actions */}
+      <Section title="Quick actions">
+        <GroupedCard>
+          <QuickActionRow
+            icon={<Sparkles size={17} className="text-primary" strokeWidth={2.4} />}
+            iconBg="rgba(52,199,89,0.12)"
+            label="Add mission"
+            subtitle="Create a custom task with rewards"
+            onClick={() => nav("/tasks")}
+          />
+          <Sep />
+          <QuickActionRow
+            icon={<AppWindow size={17} className="text-accent" strokeWidth={2.4} />}
+            iconBg="rgba(88,86,214,0.12)"
+            label="Manage restricted apps"
+            subtitle="Pick which apps require earned time"
+            onClick={() => nav("/apps")}
+          />
+          <Sep />
+          <QuickActionRow
+            icon={<Wallet size={17} className="text-points" strokeWidth={2.4} />}
+            iconBg="rgba(255,149,0,0.12)"
+            label="Pair a new device"
+            subtitle="Generate a 6-char code for a child phone"
+            onClick={() => nav("/pairing")}
+          />
+        </GroupedCard>
+      </Section>
     </div>
   );
 }
 
-import { useQuery as useQ } from "@apollo/client";
-import { CHILD_BANK_QUERY } from "../lib/queries";
+function QuickActionRow({
+  icon,
+  iconBg,
+  label,
+  subtitle,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  label: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center px-3.5 py-3 hover:bg-black/[0.04] transition-colors text-left"
+    >
+      <div
+        className="w-8 h-8 rounded-[9px] grid place-items-center mr-3 shrink-0"
+        style={{ background: iconBg }}
+      >
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-medium text-text tracking-[-0.2px]">
+          {label}
+        </div>
+        <div className="text-[12px] text-muted mt-0.5 truncate">{subtitle}</div>
+      </div>
+      <ChevronRight size={16} className="text-[#C7C7CC]" />
+    </button>
+  );
+}
 
-function ChildSummaryCard({
+function ChildRow({
   uid,
   name,
-  onClick,
   pendingCount,
+  onClick,
 }: {
   uid: string;
   name: string;
-  onClick: () => void;
   pendingCount: number;
+  onClick: () => void;
 }) {
-  const { data } = useQ<{
+  const { data } = useQuery<{
     childBank: {
       points: number;
       cashUsd: number;
@@ -216,66 +266,47 @@ function ChildSummaryCard({
     new Date(bank.activeReward.expiresAt).getTime() > Date.now();
 
   return (
-    <Card onClick={onClick} className="p-5">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-11 h-11 rounded-full bg-accent text-white grid place-items-center font-bold text-base">
-          {name[0]?.toUpperCase()}
+    <button
+      onClick={onClick}
+      className="w-full flex items-center px-3.5 py-3 hover:bg-black/[0.04] transition-colors text-left"
+    >
+      <div className="w-9 h-9 rounded-full bg-accent text-white grid place-items-center font-semibold text-sm mr-3 shrink-0">
+        {name[0]?.toUpperCase()}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-medium text-text tracking-[-0.2px] truncate">
+          {name}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[15px] font-semibold text-text truncate">
-            {name}
-          </div>
-          <div className="text-[12px] text-muted truncate">{uid}</div>
-        </div>
-        <div
-          className={cn(
-            "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
-            isUnlocked
-              ? "bg-primary-soft text-primary"
-              : "bg-surface-alt text-muted",
+        <div className="flex items-center gap-3 mt-1">
+          <span className="flex items-center gap-1 text-[12px] text-muted">
+            <Timer size={11} className="text-screentime" strokeWidth={2.4} />
+            <span className="tabular-nums">
+              {bank?.screenTimeMinutesRemaining ?? 0}m
+            </span>
+          </span>
+          <span className="flex items-center gap-1 text-[12px] text-muted">
+            <Sparkles size={11} className="text-points" strokeWidth={2.4} />
+            <span className="tabular-nums">{bank?.points ?? 0}</span>
+          </span>
+          {pendingCount > 0 && (
+            <span className="flex items-center gap-1 text-[11px] font-bold text-warning">
+              <Inbox size={11} strokeWidth={2.4} />
+              <span>{pendingCount}</span>
+            </span>
           )}
-        >
-          {isUnlocked ? "Unlocked" : "Locked"}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border">
-        <Stat icon={<Timer size={13} />} label="Min" value={`${bank?.screenTimeMinutesRemaining ?? 0}`} />
-        <Stat icon={<Sparkles size={13} />} label="Pts" value={`${bank?.points ?? 0}`} />
-        <Stat
-          icon={<Wallet size={13} />}
-          label="Cash"
-          value={`$${(bank?.cashUsd ?? 0).toFixed(2)}`}
-        />
-      </div>
-      {pendingCount > 0 && (
-        <div className="mt-3 text-[11px] font-bold text-warning bg-warning/10 rounded-lg px-2.5 py-1.5">
-          {pendingCount} pending submission{pendingCount === 1 ? "" : "s"}
-        </div>
-      )}
-    </Card>
-  );
-}
-
-function Stat({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div>
-      <div className="flex items-center gap-1 text-muted">
-        {icon}
-        <span className="text-[10px] font-bold uppercase tracking-wider">
-          {label}
-        </span>
-      </div>
-      <div className="text-[16px] font-bold text-text mt-0.5 tabular-nums">
-        {value}
-      </div>
-    </div>
+      <span
+        className={cn(
+          "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-[0.4px] mr-2",
+          isUnlocked
+            ? "bg-primary-soft text-primary"
+            : "bg-[rgba(120,120,128,0.12)] text-muted",
+        )}
+      >
+        {isUnlocked ? "Unlocked" : "Locked"}
+      </span>
+      <ChevronRight size={16} className="text-[#C7C7CC]" />
+    </button>
   );
 }

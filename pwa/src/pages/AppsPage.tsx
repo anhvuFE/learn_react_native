@@ -5,8 +5,8 @@ import {
   Button,
   Card,
   Empty,
+  Hero,
   Input,
-  PageHeader,
   SectionLabel,
 } from "../components/ui";
 import {
@@ -62,9 +62,22 @@ export default function AppsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Restricted apps"
-        subtitle="Apps your kids must earn screen time to unlock"
+      <div className="mb-3.5">
+        <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+          ENFORCEMENT
+        </div>
+        <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+          Restricted apps
+        </h1>
+      </div>
+
+      <Hero
+        accent="indigo"
+        icon={<Lock size={20} color="#fff" strokeWidth={2.2} />}
+        label="Locked apps"
+        value={`${apps.length}`}
+        valueSuffix={apps.length === 1 ? "app" : "apps"}
+        subtitle="Kids must earn screen time before they can unlock these"
       />
 
       <Card className="p-5 mb-6">

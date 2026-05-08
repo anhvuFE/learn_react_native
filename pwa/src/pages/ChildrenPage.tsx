@@ -1,7 +1,8 @@
 import { useQuery } from "@apollo/client";
-import { ChevronRight, Lock, Sparkles, Timer, Wallet } from "lucide-react";
+import { ChevronRight, Lock, Sparkles, Timer } from "lucide-react";
 import { useNavigate } from "react-router";
-import { Card, Empty, PageHeader } from "../components/ui";
+import { Card, Empty, Hero } from "../components/ui";
+import { Users } from "lucide-react";
 import { CHILD_BANK_QUERY, MY_FAMILY_QUERY } from "../lib/queries";
 
 export default function ChildrenPage() {
@@ -16,9 +17,26 @@ export default function ChildrenPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Children"
-        subtitle={`${children.length} member${children.length === 1 ? "" : "s"} in your family`}
+      <div className="mb-3.5">
+        <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+          FAMILY MEMBERS
+        </div>
+        <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+          Children
+        </h1>
+      </div>
+
+      <Hero
+        accent="indigo"
+        icon={<Users size={20} color="#fff" strokeWidth={2.2} />}
+        label="Your family"
+        value={`${children.length}`}
+        valueSuffix={children.length === 1 ? "kid" : "kids"}
+        subtitle={
+          children.length === 0
+            ? "Pair the first device from the Pairing tab"
+            : "Tap a child to see their bank balances and history"
+        }
       />
 
       {children.length === 0 ? (
@@ -82,10 +100,6 @@ function ChildRow({
       <div className="hidden md:flex items-center gap-5 mr-4">
         <Stat icon={<Timer size={13} />} value={`${bank?.screenTimeMinutesRemaining ?? 0}m`} />
         <Stat icon={<Sparkles size={13} />} value={`${bank?.points ?? 0}`} />
-        <Stat
-          icon={<Wallet size={13} />}
-          value={`$${(bank?.cashUsd ?? 0).toFixed(2)}`}
-        />
       </div>
       <div
         className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider mr-2 ${

@@ -5,9 +5,8 @@ import {
   Button,
   Card,
   Empty,
-  PageHeader,
+  Hero,
   SectionLabel,
-  StatTile,
 } from "../components/ui";
 import {
   CANCEL_REWARD,
@@ -80,30 +79,40 @@ export default function ChildDetailPage() {
         Back to children
       </button>
 
-      <PageHeader title={name} subtitle={uid} />
-
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <StatTile
-          label="Screen time left"
-          value={`${bank?.screenTimeMinutesRemaining ?? 0}m`}
-          icon={<Timer size={16} className="text-screentime" strokeWidth={2.4} />}
-          accent="primary"
-        />
-        <StatTile
-          label="Points"
-          value={`${bank?.points ?? 0}`}
-          icon={
-            <Sparkles size={16} className="text-points" strokeWidth={2.4} />
-          }
-          accent="points"
-        />
-        <StatTile
-          label="Cash"
-          value={`$${(bank?.cashUsd ?? 0).toFixed(2)}`}
-          icon={<Wallet size={16} className="text-warning" strokeWidth={2.4} />}
-          accent="warning"
-        />
+      <div className="mb-3.5">
+        <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+          CHILD PROFILE
+        </div>
+        <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+          {name}
+        </h1>
       </div>
+
+      <Hero
+        accent={isUnlocked ? "green" : "indigo"}
+        icon={<Timer size={20} color="#fff" strokeWidth={2.2} />}
+        label={isUnlocked ? "Apps unlocked" : "Apps locked"}
+        value={`${bank?.screenTimeMinutesRemaining ?? 0}`}
+        valueSuffix="min"
+        subtitle={
+          isUnlocked
+            ? "Auto-locks when timer hits 0"
+            : "Earned screen time will appear here"
+        }
+        chips={[
+          {
+            icon: <Sparkles size={11} color="rgba(255,255,255,0.85)" strokeWidth={2.4} />,
+            label: "Points",
+            value: `${bank?.points ?? 0}`,
+          },
+          {
+            icon: <Wallet size={11} color="rgba(255,255,255,0.85)" strokeWidth={2.4} />,
+            label: "Cash",
+            value: `$${(bank?.cashUsd ?? 0).toFixed(2)}`,
+          },
+        ]}
+      />
+
 
       {isUnlocked && active && (
         <Card className="mb-6 px-5 py-4 bg-primary text-white border-primary">

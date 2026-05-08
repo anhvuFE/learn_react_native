@@ -6,10 +6,11 @@ import {
   Footprints,
   HelpCircle,
   Image as ImageIcon,
+  Inbox,
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { Button, Card, Empty, Input, PageHeader } from "../components/ui";
+import { Button, Card, Empty, Hero, Input } from "../components/ui";
 import { cn } from "../lib/cn";
 import {
   APPROVE_SUBMISSION,
@@ -47,9 +48,32 @@ export default function SubmissionsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Submissions"
-        subtitle={`${subs.length} waiting for your review`}
+      <div className="mb-3.5">
+        <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+          PARENT REVIEW
+        </div>
+        <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+          Submissions
+        </h1>
+      </div>
+
+      <Hero
+        accent={subs.length > 0 ? "orange" : "green"}
+        icon={
+          subs.length > 0 ? (
+            <Inbox size={20} color="#fff" strokeWidth={2.2} />
+          ) : (
+            <CheckCircle2 size={20} color="#fff" strokeWidth={2.2} />
+          )
+        }
+        label={subs.length > 0 ? "Waiting for review" : "All caught up"}
+        value={`${subs.length}`}
+        valueSuffix={subs.length === 1 ? "submission" : "submissions"}
+        subtitle={
+          subs.length > 0
+            ? "Tap a card below to approve or reject"
+            : "Kids will appear here when they submit a mission"
+        }
       />
 
       {loading && subs.length === 0 ? (

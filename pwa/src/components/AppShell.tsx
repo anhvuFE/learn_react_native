@@ -5,7 +5,6 @@ import {
   AppWindow,
   CheckSquare,
   ChevronRight,
-  Gift,
   Inbox,
   KeyRound,
   LayoutDashboard,
@@ -39,7 +38,6 @@ const NAV: NavItem[] = [
   { to: "/activity", labelKey: "nav.activity", icon: Activity },
   { to: "/children", labelKey: "nav.children", icon: Users },
   { to: "/apps", labelKey: "nav.apps", icon: AppWindow },
-  { to: "/shop", labelKey: "nav.shop", icon: Gift },
   { to: "/pairing", labelKey: "nav.pairing", icon: KeyRound },
   { to: "/settings", labelKey: "nav.settings", icon: Settings },
 ];

@@ -5,6 +5,7 @@ import {
   HelpCircle,
   Pencil,
   Plus,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
@@ -13,7 +14,7 @@ import {
   Card,
   Empty,
   Input,
-  PageHeader,
+  Hero,
   SectionLabel,
 } from "../components/ui";
 import { cn } from "../lib/cn";
@@ -76,15 +77,28 @@ export default function TasksPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Missions"
+      <div className="flex items-end justify-between mb-3.5">
+        <div>
+          <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+            FAMILY MISSIONS
+          </div>
+          <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+            Missions
+          </h1>
+        </div>
+        <Button onClick={() => setCreating(true)}>
+          <Plus size={16} strokeWidth={2.6} />
+          Add mission
+        </Button>
+      </div>
+
+      <Hero
+        accent="green"
+        icon={<Sparkles size={20} color="#fff" strokeWidth={2.2} />}
+        label="Active missions"
+        value={`${tasks.filter((t) => t.status === "available").length}`}
+        valueSuffix={tasks.length === 1 ? "mission" : "missions"}
         subtitle="Custom tasks your kids complete to earn screen time"
-        actions={
-          <Button onClick={() => setCreating(true)}>
-            <Plus size={16} strokeWidth={2.6} />
-            Add mission
-          </Button>
-        }
       />
 
       {loading && tasks.length === 0 ? (
@@ -158,7 +172,6 @@ function TaskCard({
       <div className="flex items-center gap-2 text-[12px] mb-3 pt-3 border-t border-border flex-wrap">
         <Badge color="primary" label={`${task.rewards.screenTimeMin}m`} />
         <Badge color="points" label={`${task.rewards.points} pts`} />
-        <Badge color="warning" label={`$${task.rewards.cashUsd.toFixed(2)}`} />
         {task.recurrence && task.recurrence !== "none" && (
           <span className="px-2 py-0.5 rounded-md bg-accent-soft text-accent font-bold uppercase text-[10px] tracking-wider">
             {task.recurrence}
@@ -225,9 +238,8 @@ function TaskFormModal({
     task?.rewards.screenTimeMin?.toString() ?? "20",
   );
   const [points, setPoints] = useState(task?.rewards.points?.toString() ?? "30");
-  const [cashUsd, setCashUsd] = useState(
-    task?.rewards.cashUsd?.toFixed(2) ?? "0.50",
-  );
+  // Cash hidden in MVP — always send 0 to BE
+  const cashUsd = "0";
   const [walkSteps, setWalkSteps] = useState(
     task?.walkTargetSteps?.toString() ?? "20",
   );
@@ -367,7 +379,7 @@ function TaskFormModal({
 
           <div>
             <SectionLabel>Rewards</SectionLabel>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Field
                 label="Screen time (min)"
                 value={screenTimeMin}
@@ -378,12 +390,6 @@ function TaskFormModal({
                 label="Points"
                 value={points}
                 onChange={setPoints}
-                type="number"
-              />
-              <Field
-                label="Cash ($)"
-                value={cashUsd}
-                onChange={setCashUsd}
                 type="number"
               />
             </div>

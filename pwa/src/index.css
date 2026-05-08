@@ -1,29 +1,60 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #F5F4F8;
+  /* iOS system palette */
+  --color-bg: #F2F2F7;
   --color-surface: #FFFFFF;
   --color-surface-alt: #EFEFF4;
-  --color-border: #E5E5EA;
+  --color-border: rgba(60, 60, 67, 0.18);
   --color-text: #0A0A0F;
   --color-muted: #6E6E73;
-  --color-primary: #22C55E;
-  --color-primary-soft: #DCFCE7;
-  --color-accent: #7C3AED;
-  --color-accent-soft: #EDE9FE;
-  --color-screentime: #16A34A;
-  --color-screentime-soft: #DCFCE7;
-  --color-points: #F59E0B;
-  --color-points-soft: #FEF3C7;
-  --color-warning: #F97316;
-  --color-danger: #EF4444;
-  --color-danger-soft: #FEE2E2;
+  --color-mute2: #8E8E93;
+
+  /* iOS system colors */
+  --color-primary: #34C759;
+  --color-primary-soft: rgba(52, 199, 89, 0.12);
+  --color-accent: #5856D6;
+  --color-accent-soft: rgba(88, 86, 214, 0.12);
+  --color-points: #FF9500;
+  --color-points-soft: rgba(255, 149, 0, 0.12);
+  --color-warning: #FF9500;
+  --color-warning-soft: rgba(255, 149, 0, 0.12);
+  --color-danger: #FF3B30;
+  --color-danger-soft: rgba(255, 59, 48, 0.12);
+  --color-screentime: #34C759;
+  --color-screentime-soft: rgba(52, 199, 89, 0.12);
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
     "Segoe UI", Roboto, sans-serif;
 
-  --radius-card: 1rem;
+  --radius-card: 0.875rem;
+}
+
+@utility tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* iOS Settings grouped card */
+@utility group-card {
+  background: var(--color-surface);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* 0.5px separator with iOS-style 56px indent */
+@utility group-sep {
+  height: 0.5px;
+  background: rgba(60, 60, 67, 0.18);
+  margin-left: 56px;
+}
+
+@utility section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
 }
 
 html,
@@ -46,4 +77,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
+}
+
+* {
+  border-color: var(--color-border);
 }

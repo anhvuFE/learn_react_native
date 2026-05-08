@@ -6,11 +6,12 @@ import {
   getCurrentPermission,
   requestWebPushToken,
 } from "../lib/messaging";
+import { Settings as SettingsIcon } from "lucide-react";
 import {
   Button,
   Card,
+  Hero,
   Input,
-  PageHeader,
   SectionLabel,
   Toggle,
 } from "../components/ui";
@@ -34,6 +35,7 @@ interface Me {
   notifyOnSubmit?: boolean;
   autoLock?: boolean;
   bedtimeMode?: boolean;
+  dailyScreenTimeCapMin?: number | null;
   photoDownloadUrl?: string;
 }
 
@@ -73,7 +75,24 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <PageHeader title={t("settings.title")} subtitle={t("settings.subtitle")} />
+      <div className="mb-3.5">
+        <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+          PREFERENCES
+        </div>
+        <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+          {t("settings.title")}
+        </h1>
+      </div>
+
+      <Hero
+        accent="indigo"
+        icon={<SettingsIcon size={20} color="#fff" strokeWidth={2.2} />}
+        label="Account"
+        value={(me?.name ?? me?.email?.split("@")[0] ?? "—")
+          .slice(0, 1)
+          .toUpperCase()}
+        subtitle={t("settings.subtitle")}
+      />
 
       <SectionLabel>Profile</SectionLabel>
       <Card className="p-5 mb-6">
@@ -160,11 +179,16 @@ export default function SettingsPage() {
         />
         <SettingRow
           title="Bedtime mode"
-          subtitle="Lock all apps from 9 PM to 7 AM (server enforcement coming)"
+          subtitle="Block screen-time rewards 9 PM – 7 AM"
           value={me?.bedtimeMode ?? false}
           onChange={(v) => setBool("bedtimeMode", v)}
           last
         />
+      </Card>
+
+      <SectionLabel>Daily screen-time cap</SectionLabel>
+      <Card className="p-5 mb-6">
+        <DailyCapControl me={me} />
       </Card>
 
       <SectionLabel>Danger zone</SectionLabel>
@@ -318,6 +342,59 @@ function AvatarPicker({
           if (f) onFile(f);
         }}
       />
+    </div>
+  );
+}
+
+function DailyCapControl({ me }: { me?: Me }) {
+  const [val, setVal] = useState<string>(
+    me?.dailyScreenTimeCapMin?.toString() ?? "",
+  );
+  const [updateSettings, { loading }] = useMutation(UPDATE_MY_SETTINGS, {
+    refetchQueries: [{ query: ME_QUERY }],
+  });
+
+  useEffect(() => {
+    if (me?.dailyScreenTimeCapMin != null) {
+      setVal(me.dailyScreenTimeCapMin.toString());
+    } else if (me) {
+      setVal("");
+    }
+  }, [me?.dailyScreenTimeCapMin, me]);
+
+  const save = async () => {
+    const minutes = val.trim() === "" ? null : parseInt(val, 10);
+    if (minutes !== null && (isNaN(minutes) || minutes < 0)) {
+      alert("Enter a valid number of minutes (or empty for no cap)");
+      return;
+    }
+    await updateSettings({
+      variables: { input: { dailyScreenTimeCapMin: minutes } },
+    });
+  };
+
+  return (
+    <div className="flex items-start gap-4">
+      <div className="flex-1">
+        <div className="text-[14px] font-semibold text-text">
+          Maximum minutes per day
+        </div>
+        <div className="text-[12px] text-muted mt-0.5">
+          Total screen-time rewards a child can earn in one calendar day. Leave
+          empty for no cap.
+        </div>
+        <div className="flex gap-2 mt-3 max-w-xs">
+          <Input
+            value={val}
+            onChange={setVal}
+            type="number"
+            placeholder="No cap"
+          />
+          <Button onClick={save} disabled={loading}>
+            Save
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

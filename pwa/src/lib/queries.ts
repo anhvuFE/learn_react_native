@@ -16,6 +16,7 @@ export const ME_QUERY = gql`
       notifyOnSubmit
       autoLock
       bedtimeMode
+      dailyScreenTimeCapMin
       photoStoragePath
       photoDownloadUrl
     }

@@ -9,7 +9,8 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { Card, Empty, PageHeader, SectionLabel } from "../components/ui";
+import { Card, Empty, Hero, SectionLabel } from "../components/ui";
+import { Activity as ActivityIcon } from "lucide-react";
 import { cn } from "../lib/cn";
 import { FAMILY_ACTIVITY, MY_FAMILY_QUERY } from "../lib/queries";
 
@@ -59,9 +60,22 @@ export default function ActivityPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Activity"
-        subtitle="Everything that happened in your family — submissions, approvals, rewards"
+      <div className="mb-3.5">
+        <div className="text-[11px] font-semibold text-muted uppercase tracking-[0.6px]">
+          FAMILY TIMELINE
+        </div>
+        <h1 className="text-[26px] font-bold text-text tracking-[-0.4px] mt-0.5">
+          Activity
+        </h1>
+      </div>
+
+      <Hero
+        accent="indigo"
+        icon={<ActivityIcon size={20} color="#fff" strokeWidth={2.2} />}
+        label="All events"
+        value={`${events.length}`}
+        valueSuffix={events.length === 1 ? "event" : "events"}
+        subtitle="Submissions, approvals, and rewards across the family"
       />
 
       <div className="flex gap-3 mb-6 flex-wrap">
