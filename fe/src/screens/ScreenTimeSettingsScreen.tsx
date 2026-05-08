@@ -106,7 +106,7 @@ const ScreenTimeSettingsScreen: React.FC<{ onClose: () => void }> = ({
   const appsCount = appsData?.restrictedApps?.length ?? 0;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: "#F2F2F7" }}>
       <View style={styles.topBar}>
         <Pressable onPress={onClose} style={styles.topBarBack}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
@@ -192,21 +192,21 @@ const ScreenTimeSettingsScreen: React.FC<{ onClose: () => void }> = ({
             value={`${Math.round(earnedLast7)}m`}
             color={colors.screenTime}
             bg={colors.screenTimeSoft}
-            icon="time"
+            icon="time-outline"
           />
           <StatTile
             label="Apps locked"
             value={`${appsCount}`}
             color={colors.text}
             bg={colors.surfaceAlt}
-            icon="lock-closed"
+            icon="lock-closed-outline"
           />
         </View>
 
         <Text style={styles.sectionLabel}>Behavior</Text>
 
         <SettingRow
-          icon="lock-closed"
+          icon="lock-closed-outline"
           iconColor={colors.primary}
           iconBg={colors.primarySoft}
           title="Auto-lock when reward ends"
@@ -216,14 +216,16 @@ const ScreenTimeSettingsScreen: React.FC<{ onClose: () => void }> = ({
         />
 
         <SettingRow
-          icon="moon"
+          icon="moon-outline"
           iconColor={colors.accent}
           iconBg={colors.accentSoft}
           title="Bedtime mode"
-          subtitle="Lock all apps from 9 PM to 7 AM (server enforcement coming soon)"
+          subtitle="Pause screen-time rewards 9 PM – 7 AM"
           value={bedtimeMode}
           onValueChange={onBedtime}
         />
+
+        <BedtimeTimeline active={bedtimeMode} />
 
         {recentScreenTime.length > 0 && (
           <>
@@ -257,7 +259,7 @@ const ScreenTimeSettingsScreen: React.FC<{ onClose: () => void }> = ({
                   }}
                 >
                   <Ionicons
-                    name="time"
+                    name="time-outline"
                     size={18}
                     color={colors.screenTime}
                   />
@@ -423,5 +425,179 @@ const SettingRow: React.FC<{
     />
   </View>
 );
+
+const BedtimeTimeline: React.FC<{ active: boolean }> = ({ active }) => {
+  const currentHour = new Date().getHours() + new Date().getMinutes() / 60;
+
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surface,
+        borderRadius: 16,
+        padding: 16,
+        marginTop: 6,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: colors.border,
+        opacity: active ? 1 : 0.55,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginBottom: 10,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "700",
+            color: colors.muted,
+            letterSpacing: 0.6,
+            textTransform: "uppercase",
+          }}
+        >
+          24-hour schedule
+        </Text>
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "700",
+            color: active ? colors.accent : colors.muted,
+            letterSpacing: 0.4,
+          }}
+        >
+          9 PM – 7 AM
+        </Text>
+      </View>
+
+      {/* 24-segment strip */}
+      <View
+        style={{
+          flexDirection: "row",
+          height: 28,
+          borderRadius: 8,
+          overflow: "hidden",
+          backgroundColor: "rgba(120,120,128,0.08)",
+        }}
+      >
+        {Array.from({ length: 24 }).map((_, h) => {
+          const isBedtime = h >= 21 || h < 7;
+          const isCurrent = Math.floor(currentHour) === h;
+          return (
+            <View
+              key={h}
+              style={{
+                flex: 1,
+                backgroundColor: isBedtime
+                  ? active
+                    ? "#5856D6"
+                    : "rgba(88,86,214,0.35)"
+                  : "#34C759",
+                marginRight: h < 23 ? 1 : 0,
+                opacity: isBedtime ? 1 : 0.85,
+              }}
+            >
+              {isCurrent && (
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderColor: "#FFFFFF",
+                    borderWidth: 2,
+                    borderRadius: 4,
+                  }}
+                />
+              )}
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Hour labels */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: 6,
+          paddingHorizontal: 1,
+        }}
+      >
+        {["12a", "6a", "12p", "6p", "12a"].map((label, i) => (
+          <Text
+            key={i}
+            style={{
+              fontSize: 10,
+              color: colors.muted,
+              fontWeight: "600",
+              letterSpacing: 0.2,
+            }}
+          >
+            {label}
+          </Text>
+        ))}
+      </View>
+
+      {/* Legend */}
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 14,
+          marginTop: 10,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <View
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 3,
+              backgroundColor: "#34C759",
+            }}
+          />
+          <Text
+            style={{ fontSize: 11, color: colors.muted, fontWeight: "600" }}
+          >
+            Wake
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <View
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 3,
+              backgroundColor: active ? "#5856D6" : "rgba(88,86,214,0.35)",
+            }}
+          />
+          <Text
+            style={{ fontSize: 11, color: colors.muted, fontWeight: "600" }}
+          >
+            Bedtime
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <View
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 3,
+              borderColor: "#FFFFFF",
+              borderWidth: 2,
+              backgroundColor: colors.muted,
+            }}
+          />
+          <Text
+            style={{ fontSize: 11, color: colors.muted, fontWeight: "600" }}
+          >
+            Now
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 export default ScreenTimeSettingsScreen;

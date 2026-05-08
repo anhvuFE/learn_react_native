@@ -64,7 +64,7 @@ const FamilyManageScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: "#F2F2F7" }}>
       <View style={styles.topBar}>
         <Pressable onPress={onClose} style={styles.topBarBack}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
@@ -235,7 +235,7 @@ const FamilyManageScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     marginRight: 12,
                   }}
                 >
-                  <Ionicons name="key" size={18} color={colors.primary} />
+                  <Ionicons name="key-outline" size={18} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
@@ -260,7 +260,7 @@ const FamilyManageScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     {new Date(c.expiresAt).toLocaleDateString()}
                   </Text>
                 </View>
-                <Ionicons name="copy" size={16} color={colors.primary} />
+                <Ionicons name="copy-outline" size={16} color={colors.primary} />
               </Pressable>
             ))}
 

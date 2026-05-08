@@ -340,54 +340,66 @@ const MissionComplete: React.FC<Props> = ({ mission, onContinue }) => {
 
           <Text style={styles.earnedLabel}>You earned</Text>
           <Animated.View
-            style={[
-              styles.earnedRow,
-              {
-                opacity: rowOpacity,
-                transform: [{ translateY: rowTranslate }],
-              },
-            ]}
+            style={{
+              opacity: rowOpacity,
+              transform: [{ translateY: rowTranslate }],
+              alignItems: "center",
+              marginTop: 10,
+              marginBottom: 18,
+            }}
           >
-            <View style={styles.earnedCol}>
-              <Ionicons
-                name="phone-portrait-outline"
-                size={20}
-                color={colors.screenTime}
-              />
-              <Text
-                style={[
-                  styles.earnedColValue,
-                  { color: colors.screenTime, marginTop: 4 },
-                ]}
+            <Text
+              style={{
+                color: "#FBBF24",
+                fontSize: 64,
+                fontWeight: "900",
+                letterSpacing: -2,
+                fontVariant: ["tabular-nums"],
+                lineHeight: 70,
+                textShadowColor: "rgba(251, 191, 36, 0.5)",
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 20,
+              }}
+            >
+              +{r.screenTimeMin}
+            </Text>
+            <Text
+              style={{
+                color: "#FBBF24",
+                fontSize: 18,
+                fontWeight: "700",
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                marginTop: -4,
+              }}
+            >
+              minutes unlocked
+            </Text>
+            {r.points > 0 && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginTop: 14,
+                  backgroundColor: "rgba(245, 158, 11, 0.18)",
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 999,
+                  gap: 6,
+                }}
               >
-                +{r.screenTimeMin}m
-              </Text>
-              <Text style={styles.earnedColLabel}>Screen Time</Text>
-            </View>
-            <View style={styles.earnedCol}>
-              <Ionicons name="star" size={20} color={colors.points} />
-              <Text
-                style={[
-                  styles.earnedColValue,
-                  { color: colors.points, marginTop: 4 },
-                ]}
-              >
-                +{r.points}
-              </Text>
-              <Text style={styles.earnedColLabel}>Points</Text>
-            </View>
-            <View style={styles.earnedCol}>
-              <Ionicons name="cash" size={20} color={colors.cash} />
-              <Text
-                style={[
-                  styles.earnedColValue,
-                  { color: colors.cash, marginTop: 4 },
-                ]}
-              >
-                +${r.cashUsd.toFixed(2)}
-              </Text>
-              <Text style={styles.earnedColLabel}>Cash*</Text>
-            </View>
+                <Ionicons name="sparkles-outline" size={14} color={colors.points} />
+                <Text
+                  style={{
+                    color: colors.points,
+                    fontSize: 13,
+                    fontWeight: "700",
+                  }}
+                >
+                  +{r.points} bonus points
+                </Text>
+              </View>
+            )}
           </Animated.View>
 
           <Text style={styles.rewardChosenLabel}>Reward chosen</Text>

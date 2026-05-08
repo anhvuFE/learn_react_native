@@ -22,6 +22,7 @@ export const ME_QUERY = gql`
       notifyOnSubmit
       autoLock
       bedtimeMode
+      dailyScreenTimeCapMin
       photoStoragePath
       photoDownloadUrl
     }
@@ -306,6 +307,22 @@ export const APPROVE_SUBMISSION = gql`
 export const DELETE_MY_ACCOUNT = gql`
   mutation DeleteMyAccount {
     deleteMyAccount
+  }
+`;
+
+export const FAMILY_ACTIVITY = gql`
+  query FamilyActivity($childUid: String, $limit: Int) {
+    familyActivity(childUid: $childUid, limit: $limit) {
+      id
+      kind
+      occurredAt
+      childUid
+      taskId
+      taskTitle
+      taskType
+      rewardType
+      rewardAmount
+    }
   }
 `;
 

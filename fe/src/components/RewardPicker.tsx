@@ -43,7 +43,8 @@ export const REWARD_META: Record<
   },
 };
 
-export const REWARD_ORDER: RewardType[] = ["screen-time", "points", "cash"];
+// Cash reward is hidden in UI for MVP (no payout flow). BE schema still supports it.
+export const REWARD_ORDER: RewardType[] = ["screen-time", "points"];
 
 export const RewardIcon: React.FC<{
   reward: RewardType;

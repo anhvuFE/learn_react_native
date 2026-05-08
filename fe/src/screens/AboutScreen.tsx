@@ -51,7 +51,7 @@ const AboutScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: "#F2F2F7" }}>
       <View style={styles.topBar}>
         <Pressable onPress={onClose} style={styles.topBarBack}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
@@ -181,16 +181,16 @@ const AboutScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         />
 
         <Text style={[styles.sectionLabel, { marginTop: 18 }]}>Stack</Text>
-        <StackRow icon="phone-portrait" name="Expo SDK" version="54" />
+        <StackRow icon="phone-portrait-outline" name="Expo SDK" version="54" />
         <StackRow icon="logo-react" name="React Native" version="0.81" />
-        <StackRow icon="server" name="NestJS GraphQL" version="11" />
+        <StackRow icon="server-outline" name="NestJS GraphQL" version="11" />
         <StackRow
-          icon="flame"
+          icon="flame-outline"
           name="Firebase"
           version="Auth · Firestore · Storage"
         />
         <StackRow
-          icon="rocket"
+          icon="rocket-outline"
           name="Apollo Client"
           version="3.14"
         />
@@ -206,7 +206,7 @@ const AboutScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           ]}
         >
           <View style={styles.menuRowIcon}>
-            <Ionicons name="globe" size={18} color={colors.text} />
+            <Ionicons name="globe-outline" size={18} color={colors.text} />
           </View>
           <Text style={styles.menuRowLabel}>Built with Expo</Text>
           <Ionicons
@@ -334,7 +334,7 @@ const DetailRow: React.FC<{
     >
       {value}
     </Text>
-    {onPress && <Ionicons name="copy" size={14} color={colors.muted} />}
+    {onPress && <Ionicons name="copy-outline" size={14} color={colors.muted} />}
   </Pressable>
 );
 

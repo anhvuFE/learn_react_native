@@ -90,7 +90,7 @@ const RestrictedAppsScreen: React.FC<{ onClose: () => void }> = ({
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: "#F2F2F7" }}>
       <View style={styles.topBar}>
         <Pressable onPress={onClose} style={styles.topBarBack}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />

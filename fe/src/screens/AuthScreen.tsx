@@ -116,250 +116,348 @@ const AuthScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1, backgroundColor: "#F2F2F7" }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 }]}
+        contentContainerStyle={{ paddingBottom: 40, paddingTop: 18 }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.greetingRow, { marginTop: 20 }]}>
-          <View style={[styles.brandLogo, { width: 56, height: 56, borderRadius: 14 }]}>
-            <Ionicons name="shield-checkmark" size={28} color="#fff" />
+        {/* Brand hero */}
+        <View
+          style={{
+            alignItems: "center",
+            paddingVertical: 28,
+            paddingHorizontal: 22,
+          }}
+        >
+          <View
+            style={{
+              width: 84,
+              height: 84,
+              borderRadius: 22,
+              backgroundColor: "#5856D6",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 14,
+            }}
+          >
+            <Ionicons name="shield-checkmark" size={42} color="#fff" />
           </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.brandTitle}>ScreenMindr</Text>
-            <Text style={styles.brandSub}>
-              {isParent ? "Sign in as a parent" : "Pair this device with your parent"}
-            </Text>
-          </View>
+          <Text
+            style={{
+              fontSize: 26,
+              fontWeight: "700",
+              color: "#0A0A0F",
+              letterSpacing: -0.5,
+            }}
+          >
+            ScreenMindr
+          </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              color: "#6E6E73",
+              marginTop: 4,
+              textAlign: "center",
+            }}
+          >
+            {isParent
+              ? "Manage your kid's screen time"
+              : "Pair this device with a parent"}
+          </Text>
         </View>
 
+        {/* Role segmented control */}
         <View
           style={{
             flexDirection: "row",
-            backgroundColor: colors.surface,
-            borderRadius: 999,
-            padding: 4,
-            marginVertical: 18,
-            borderWidth: 1,
-            borderColor: colors.border,
+            backgroundColor: "rgba(120,120,128,0.16)",
+            borderRadius: 9,
+            padding: 2,
+            marginHorizontal: 18,
+            marginBottom: 14,
           }}
         >
-          <Pressable
-            onPress={() => setMode("parent-login")}
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              borderRadius: 999,
-              alignItems: "center",
-              backgroundColor: isParent ? colors.primary : "transparent",
-            }}
-          >
-            <Text
-              style={{
-                fontWeight: "800",
-                color: isParent ? "#fff" : colors.muted,
-                fontSize: 13,
-                letterSpacing: 0.5,
-              }}
-            >
-              PARENT
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setMode("child-pair")}
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              borderRadius: 999,
-              alignItems: "center",
-              backgroundColor: !isParent ? colors.primary : "transparent",
-            }}
-          >
-            <Text
-              style={{
-                fontWeight: "800",
-                color: !isParent ? "#fff" : colors.muted,
-                fontSize: 13,
-                letterSpacing: 0.5,
-              }}
-            >
-              CHILD
-            </Text>
-          </Pressable>
-        </View>
-
-        {isParent ? (
-          <View>
-            <Text style={styles.rewardChooseLabel}>Email</Text>
-            <TextInput
-              style={authInputStyle}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="parent@example.com"
-              placeholderTextColor={colors.muted}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoCorrect={false}
-              editable={!busy}
-            />
-
-            <Text style={[styles.rewardChooseLabel, { marginTop: 14 }]}>
-              Password
-            </Text>
-            <TextInput
-              style={authInputStyle}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••"
-              placeholderTextColor={colors.muted}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!busy}
-            />
-
-            {!isSignup && (
+          {(["parent-login", "child-pair"] as const).map((m) => {
+            const active =
+              (m === "parent-login" && isParent) ||
+              (m === "child-pair" && !isParent);
+            return (
               <Pressable
-                onPress={handleForgotPassword}
-                style={{ marginTop: 8, alignSelf: "flex-end" }}
+                key={m}
+                onPress={() => setMode(m)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 7,
+                  alignItems: "center",
+                  backgroundColor: active ? "#FFFFFF" : "transparent",
+                  ...(active && {
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }),
+                }}
               >
                 <Text
                   style={{
-                    color: colors.accent,
-                    fontSize: 12,
-                    fontWeight: "600",
+                    fontWeight: active ? "600" : "500",
+                    color: active ? "#0A0A0F" : "#6E6E73",
+                    fontSize: 14,
+                    letterSpacing: -0.1,
                   }}
                 >
-                  Forgot password?
+                  {m === "parent-login" ? "Parent" : "Child"}
                 </Text>
               </Pressable>
-            )}
+            );
+          })}
+        </View>
 
-            <View style={{ height: 18 }} />
+        {/* Form section */}
+        <View style={{ marginHorizontal: 18 }}>
+          <Text style={iosSectionLabel}>
+            {isParent
+              ? isSignup
+                ? "CREATE PARENT ACCOUNT"
+                : "PARENT SIGN IN"
+              : "PAIRING CODE"}
+          </Text>
 
-            <Pressable
-              disabled={busy}
-              onPress={isSignup ? handleParentSignUp : handleParentSignIn}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.primaryButtonPressed,
-                busy && { opacity: 0.6 },
-              ]}
-            >
-              {busy ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: 14,
+              overflow: "hidden",
+            }}
+          >
+            {isParent ? (
+              <>
+                <View style={iosFieldRow}>
                   <Ionicons
-                    name={isSignup ? "person-add" : "log-in"}
-                    size={16}
-                    color="#fff"
-                    style={{ marginRight: 8 }}
+                    name="mail-outline"
+                    size={17}
+                    color="#5856D6"
+                    style={{ marginRight: 10 }}
                   />
-                  <Text style={styles.primaryButtonText}>
-                    {isSignup ? "Sign up" : "Sign in"}
-                  </Text>
-                </>
-              )}
-            </Pressable>
+                  <TextInput
+                    style={iosFieldInput}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="parent@example.com"
+                    placeholderTextColor="#C7C7CC"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoCorrect={false}
+                    editable={!busy}
+                  />
+                </View>
+                <View style={iosFieldSep} />
+                <View style={iosFieldRow}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={17}
+                    color="#5856D6"
+                    style={{ marginRight: 10 }}
+                  />
+                  <TextInput
+                    style={iosFieldInput}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Password"
+                    placeholderTextColor="#C7C7CC"
+                    secureTextEntry
+                    autoCapitalize="none"
+                    editable={!busy}
+                  />
+                </View>
+              </>
+            ) : (
+              <View style={iosFieldRow}>
+                <Ionicons
+                  name="key-outline"
+                  size={17}
+                  color="#5856D6"
+                  style={{ marginRight: 10 }}
+                />
+                <TextInput
+                  style={[
+                    iosFieldInput,
+                    {
+                      fontSize: 22,
+                      letterSpacing: 6,
+                      textAlign: "center",
+                      fontWeight: "700",
+                    },
+                  ]}
+                  value={code}
+                  onChangeText={(t) => setCode(t.toUpperCase())}
+                  placeholder="A1B2C3"
+                  placeholderTextColor="#C7C7CC"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={8}
+                  editable={!busy}
+                />
+              </View>
+            )}
+          </View>
 
+          {isParent && !isSignup && (
             <Pressable
-              onPress={() => setMode(isSignup ? "parent-login" : "parent-signup")}
+              onPress={handleForgotPassword}
+              style={{ marginTop: 8, alignSelf: "flex-end" }}
+            >
+              <Text
+                style={{
+                  color: "#5856D6",
+                  fontSize: 13,
+                  fontWeight: "500",
+                }}
+              >
+                Forgot password?
+              </Text>
+            </Pressable>
+          )}
+
+          {!isParent && (
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#6E6E73",
+                marginTop: 8,
+                marginLeft: 4,
+                lineHeight: 17,
+              }}
+            >
+              Ask your parent to generate a code from their dashboard.
+            </Text>
+          )}
+
+          <View style={{ height: 22 }} />
+
+          {/* Submit button */}
+          <Pressable
+            disabled={busy}
+            onPress={
+              isParent
+                ? isSignup
+                  ? handleParentSignUp
+                  : handleParentSignIn
+                : handleChildPair
+            }
+            style={({ pressed }) => [
+              {
+                backgroundColor: "#5856D6",
+                paddingVertical: 14,
+                borderRadius: 14,
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "row",
+                opacity: pressed || busy ? 0.85 : 1,
+              },
+            ]}
+          >
+            {busy ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons
+                  name={
+                    isParent ? (isSignup ? "person-add" : "log-in") : "link"
+                  }
+                  size={16}
+                  color="#fff"
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: 16,
+                    fontWeight: "600",
+                    letterSpacing: -0.2,
+                  }}
+                >
+                  {isParent
+                    ? isSignup
+                      ? "Create account"
+                      : "Sign in"
+                    : "Pair this device"}
+                </Text>
+              </>
+            )}
+          </Pressable>
+
+          {isParent && (
+            <Pressable
+              onPress={() =>
+                setMode(isSignup ? "parent-login" : "parent-signup")
+              }
               style={{ marginTop: 14, alignItems: "center" }}
             >
               <Text
                 style={{
-                  color: colors.primary,
-                  fontWeight: "700",
-                  fontSize: 13,
+                  color: "#5856D6",
+                  fontWeight: "500",
+                  fontSize: 14,
                 }}
               >
                 {isSignup
                   ? "Already have an account? Sign in"
-                  : "New parent? Create an account"}
+                  : "New here? Create an account"}
               </Text>
             </Pressable>
-          </View>
-        ) : (
-          <View>
-            <Text style={styles.rewardChooseLabel}>Pairing code</Text>
-            <TextInput
-              style={[
-                authInputStyle,
-                {
-                  fontSize: 22,
-                  letterSpacing: 6,
-                  textAlign: "center",
-                  fontWeight: "800",
-                },
-              ]}
-              value={code}
-              onChangeText={(t) => setCode(t.toUpperCase())}
-              placeholder="A1B2C3"
-              placeholderTextColor={colors.muted}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={8}
-              editable={!busy}
-            />
+          )}
+        </View>
 
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.muted,
-                textAlign: "center",
-                marginTop: 8,
-              }}
-            >
-              Ask your parent to generate a code from their account
-            </Text>
-
-            <View style={{ height: 18 }} />
-
-            <Pressable
-              disabled={busy}
-              onPress={handleChildPair}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.primaryButtonPressed,
-                busy && { opacity: 0.6 },
-              ]}
-            >
-              {busy ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons
-                    name="link"
-                    size={16}
-                    color="#fff"
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text style={styles.primaryButtonText}>Pair this device</Text>
-                </>
-              )}
-            </Pressable>
-          </View>
-        )}
-
-        <Text style={[styles.footerNote, { marginTop: 32 }]}>
-          Demo build · ScreenMindr
+        <Text
+          style={{
+            fontSize: 12,
+            color: "#6E6E73",
+            textAlign: "center",
+            marginTop: 32,
+            paddingHorizontal: 22,
+            lineHeight: 17,
+          }}
+        >
+          ScreenMindr · Demo build · v1.0
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-const authInputStyle = {
-  backgroundColor: colors.surface,
-  borderRadius: 14,
-  paddingHorizontal: 16,
-  paddingVertical: 14,
+const iosSectionLabel = {
+  fontSize: 12,
+  fontWeight: "500" as const,
+  color: "#6E6E73",
+  letterSpacing: 0.4,
+  textTransform: "uppercase" as const,
+  marginLeft: 18,
+  marginBottom: 6,
+};
+
+const iosFieldRow = {
+  flexDirection: "row" as const,
+  alignItems: "center" as const,
+  paddingHorizontal: 14,
+  paddingVertical: 12,
+};
+
+const iosFieldSep = {
+  height: 0.5,
+  backgroundColor: "rgba(60,60,67,0.18)",
+  marginLeft: 41,
+};
+
+const iosFieldInput = {
+  flex: 1,
   fontSize: 16,
-  color: colors.text,
-  borderWidth: 1,
-  borderColor: colors.border,
+  color: "#0A0A0F",
 };
 
 export default AuthScreen;

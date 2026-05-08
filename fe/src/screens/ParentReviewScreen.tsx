@@ -449,226 +449,310 @@ const ParentReviewScreen: React.FC<ParentReviewProps> = ({
     }
   }
 
+  void signOut;
+  const heroAccent = pending.length > 0 ? "#FF9500" : "#34C759";
+  const heroAccentSoft = pending.length > 0 ? "#FFCC00" : "#30D158";
+
   return (
     <ScrollView
-      style={styles.safeArea}
-      contentContainerStyle={styles.scrollContent}
+      style={{ flex: 1, backgroundColor: "#F2F2F7" }}
+      contentContainerStyle={{ paddingBottom: 48 }}
       showsVerticalScrollIndicator={false}
-      removeClippedSubviews
-      scrollEventThrottle={16}
     >
-      <View style={styles.greetingRow}>
-        <View style={styles.greetingAvatar}>
-          <Text style={styles.greetingAvatarText}>
-            {displayName[0]?.toUpperCase() ?? "P"}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.greetingHi}>Parent</Text>
-          <Text style={styles.greetingName}>Hi, {displayName}</Text>
-        </View>
-        <Pressable
-          onPress={() => signOut()}
-          style={({ pressed }) => [
-            styles.iconBtn,
-            pressed && { opacity: 0.6 },
-          ]}
-        >
-          <Ionicons name="log-out-outline" size={20} color={colors.text} />
-        </Pressable>
-      </View>
-
-      {/* Quick stats strip */}
+      {/* Greeting */}
       <View
         style={{
-          flexDirection: "row",
-          gap: 10,
-          marginBottom: 18,
+          paddingHorizontal: 18,
+          paddingTop: 12,
+          paddingBottom: 14,
+        }}
+      >
+        <Text style={iosStyles.greetingTop}>PARENT REVIEW</Text>
+        <Text style={iosStyles.greetingName}>Hi, {displayName}</Text>
+      </View>
+
+      {/* Hero — pending review badge */}
+      <View
+        style={{
+          marginHorizontal: 18,
+          marginBottom: 14,
         }}
       >
         <View
-          style={[
-            styles.miniStatCard,
-            {
-              flex: 1,
-              backgroundColor: colors.warning,
-              height: 84,
-              padding: 12,
-            },
-          ]}
-        >
-          <Text style={styles.miniStatLabelInline}>To review</Text>
-          <Text style={styles.miniStatValue}>{pending.length}</Text>
-        </View>
-        <View
-          style={[
-            styles.miniStatCard,
-            {
-              flex: 1,
-              backgroundColor: colors.accent,
-              height: 84,
-              padding: 12,
-            },
-          ]}
-        >
-          <Text style={styles.miniStatLabelInline}>Children</Text>
-          <Text style={styles.miniStatValue}>{childCount}</Text>
-        </View>
-        <View
-          style={[
-            styles.miniStatCard,
-            {
-              flex: 1,
-              backgroundColor: colors.primary,
-              height: 84,
-              padding: 12,
-            },
-          ]}
-        >
-          <Text style={styles.miniStatLabelInline}>Tasks</Text>
-          <Text style={styles.miniStatValue}>{tasksData?.tasks?.length ?? 0}</Text>
-        </View>
-      </View>
-
-      {/* Pairing code shortcut */}
-      <Pressable
-        onPress={generateCode}
-        style={({ pressed }) => [
-          {
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "#0F172A",
-            borderRadius: 16,
-            padding: 14,
-            marginBottom: 18,
-          },
-          pressed && { opacity: 0.9 },
-        ]}
-      >
-        <Ionicons name="qr-code" size={26} color="#FBBF24" />
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.7)",
-              fontSize: 11,
-              fontWeight: "800",
-              letterSpacing: 1.2,
-              textTransform: "uppercase",
-            }}
-          >
-            Pairing code
-          </Text>
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 20,
-              fontWeight: "800",
-              letterSpacing: 3,
-              fontVariant: ["tabular-nums"],
-              marginTop: 2,
-            }}
-          >
-            {activeCode ? activeCode.code : "Tap to generate"}
-          </Text>
-        </View>
-        <Ionicons
-          name={activeCode ? "refresh" : "add-circle"}
-          size={22}
-          color="rgba(255,255,255,0.7)"
-        />
-      </Pressable>
-
-      <View style={styles.sectionRow}>
-        <Text style={styles.sectionLabel}>Pending review</Text>
-        <Text
           style={{
-            fontSize: 12,
-            color: pending.length > 0 ? colors.warning : colors.muted,
-            fontWeight: "800",
+            borderRadius: 22,
+            padding: 22,
+            overflow: "hidden",
+            backgroundColor: heroAccent,
           }}
         >
-          {pending.length} waiting
-        </Text>
-      </View>
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundColor: heroAccentSoft,
+              opacity: 0.4,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: -50,
+              right: -40,
+              width: 180,
+              height: 180,
+              borderRadius: 90,
+              backgroundColor: "#FFD60A",
+              opacity: 0.2,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              bottom: -70,
+              left: -20,
+              width: 140,
+              height: 140,
+              borderRadius: 70,
+              backgroundColor: "#FFFFFF",
+              opacity: 0.1,
+            }}
+          />
 
-      {loading && pending.length === 0 ? (
-        <View style={{ paddingVertical: 24, alignItems: "center" }}>
-          <ActivityIndicator color={colors.primary} />
-        </View>
-      ) : error ? (
-        <View
-          style={{
-            backgroundColor: colors.dangerSoft,
-            padding: 14,
-            borderRadius: 14,
-          }}
-        >
-          <Text style={{ color: colors.danger, fontWeight: "700" }}>
-            {error.message}
-          </Text>
-          <Pressable onPress={() => refetch()}>
-            <Text
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 18,
+            }}
+          >
+            <View
               style={{
-                color: colors.danger,
-                fontWeight: "700",
-                marginTop: 6,
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                backgroundColor: "rgba(255, 255, 255, 0.18)",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              Retry
+              <Ionicons
+                name={pending.length > 0 ? "mail-unread" : "checkmark-done"}
+                size={20}
+                color="#FFFFFF"
+              />
+            </View>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.78)",
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                marginLeft: 10,
+              }}
+            >
+              {pending.length > 0 ? "WAITING FOR REVIEW" : "ALL CAUGHT UP"}
             </Text>
-          </Pressable>
-        </View>
-      ) : pending.length === 0 ? (
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 18,
-            padding: 24,
-            alignItems: "center",
-            borderWidth: 1,
-            borderColor: colors.border,
-          }}
-        >
-          <Ionicons name="checkmark-done" size={42} color={colors.primary} />
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "700",
-              color: colors.text,
-              marginTop: 10,
-            }}
-          >
-            All caught up
-          </Text>
-          <Text
-            style={{
-              fontSize: 13,
-              color: colors.muted,
-              marginTop: 4,
-              textAlign: "center",
-            }}
-          >
-            No submissions waiting for review.
-          </Text>
-        </View>
-      ) : (
-        pending.map((s) => (
-          <PendingCard
-            key={s.id}
-            submission={s}
-            taskTitle={tasksMap.get(s.taskId) ?? "Mission"}
-            isActing={actingId === s.id}
-            disabled={approving || rejecting}
-            highlighted={focusedSubmissionId === s.id}
-            onApprove={() => approve(s.id)}
-            onReject={() => reject(s.id)}
-          />
-        ))
-      )}
+          </View>
 
-      <Text style={[styles.footerNote, { marginTop: 18 }]}>
-        Auto-refreshes every 15s · pull child app to submit
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 56,
+              fontWeight: "800",
+              letterSpacing: -1.8,
+              fontVariant: ["tabular-nums"],
+              lineHeight: 60,
+            }}
+          >
+            {pending.length}
+            <Text
+              style={{
+                fontSize: 22,
+                fontWeight: "600",
+                color: "rgba(255,255,255,0.7)",
+                letterSpacing: -0.4,
+              }}
+            >
+              {" "}
+              {pending.length === 1 ? "submission" : "submissions"}
+            </Text>
+          </Text>
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.85)",
+              fontSize: 14,
+              marginTop: 4,
+              letterSpacing: -0.1,
+            }}
+          >
+            {pending.length > 0
+              ? "Tap a card below to approve or reject"
+              : "Kids will appear here when they submit a mission"}
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 18,
+              gap: 10,
+            }}
+          >
+            <ParentHeroChip
+              icon="people-outline"
+              label="Kids"
+              value={`${childCount}`}
+            />
+            <ParentHeroChip
+              icon="rocket-outline"
+              label="Tasks"
+              value={`${tasksData?.tasks?.length ?? 0}`}
+            />
+            <ParentHeroChip
+              icon="key-outline"
+              label="Code"
+              value={activeCode ? activeCode.code.slice(0, 4) : "—"}
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* Pairing shortcut */}
+      <Section title="Quick actions">
+        <View style={iosStyles.groupedCard}>
+          <SimpleRow
+            icon="qr-code-outline"
+            iconColor="#5856D6"
+            iconBg="rgba(88,86,214,0.12)"
+            label={activeCode ? "Active pairing code" : "Generate pairing code"}
+            value={activeCode ? activeCode.code : "Tap to create"}
+            onPress={generateCode}
+          />
+        </View>
+      </Section>
+
+      {/* Pending list */}
+      <Section
+        title="Pending review"
+        rightLabel={
+          pending.length > 0
+            ? `${pending.length} waiting`
+            : undefined
+        }
+        rightLabelColor={pending.length > 0 ? "#FF9500" : undefined}
+      >
+        {loading && pending.length === 0 ? (
+          <View
+            style={{
+              ...iosStyles.groupedCard,
+              alignItems: "center",
+              paddingVertical: 32,
+            }}
+          >
+            <ActivityIndicator color="#5856D6" />
+          </View>
+        ) : error ? (
+          <View
+            style={{
+              ...iosStyles.groupedCard,
+              padding: 16,
+            }}
+          >
+            <Text
+              style={{ color: "#FF3B30", fontSize: 15, fontWeight: "600" }}
+            >
+              Couldn&apos;t load submissions
+            </Text>
+            <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>
+              {error.message}
+            </Text>
+            <Pressable onPress={() => refetch()} style={{ marginTop: 8 }}>
+              <Text
+                style={{ color: "#5856D6", fontWeight: "600", fontSize: 14 }}
+              >
+                Tap to retry
+              </Text>
+            </Pressable>
+          </View>
+        ) : pending.length === 0 ? (
+          <View
+            style={{
+              ...iosStyles.groupedCard,
+              alignItems: "center",
+              paddingVertical: 32,
+              paddingHorizontal: 22,
+            }}
+          >
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 18,
+                backgroundColor: "rgba(52,199,89,0.12)",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 12,
+              }}
+            >
+              <Ionicons name="checkmark-done-outline" size={26} color="#34C759" />
+            </View>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                color: colors.text,
+                letterSpacing: -0.3,
+              }}
+            >
+              All caught up
+            </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                color: colors.muted,
+                textAlign: "center",
+                marginTop: 6,
+                lineHeight: 18,
+              }}
+            >
+              No submissions waiting for review. Kids will appear here when
+              they submit a mission.
+            </Text>
+          </View>
+        ) : (
+          <View style={{ paddingHorizontal: 18, gap: 10 }}>
+            {pending.map((s) => (
+              <PendingCard
+                key={s.id}
+                submission={s}
+                taskTitle={tasksMap.get(s.taskId) ?? "Mission"}
+                isActing={actingId === s.id}
+                disabled={approving || rejecting}
+                highlighted={focusedSubmissionId === s.id}
+                onApprove={() => approve(s.id)}
+                onReject={() => reject(s.id)}
+              />
+            ))}
+          </View>
+        )}
+      </Section>
+
+      <Text
+        style={{
+          fontSize: 12,
+          color: colors.muted,
+          textAlign: "center",
+          paddingHorizontal: 22,
+          marginTop: 6,
+          lineHeight: 17,
+        }}
+      >
+        Auto-refreshes every 30s · sign out via Menu
       </Text>
+
       {toast && (
         <View
           style={{
@@ -691,7 +775,11 @@ const ParentReviewScreen: React.FC<ParentReviewProps> = ({
           }}
         >
           <Ionicons
-            name={toast.color === colors.primary ? "checkmark-circle" : "close-circle"}
+            name={
+              toast.color === colors.primary
+                ? "checkmark-circle"
+                : "close-circle"
+            }
             size={18}
             color="#fff"
             style={{ marginRight: 8 }}
@@ -703,6 +791,175 @@ const ParentReviewScreen: React.FC<ParentReviewProps> = ({
       )}
     </ScrollView>
   );
+};
+
+const ParentHeroChip: React.FC<{
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+}> = ({ icon, label, value }) => (
+  <View
+    style={{
+      flex: 1,
+      backgroundColor: "rgba(255, 255, 255, 0.16)",
+      borderRadius: 14,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    }}
+  >
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+      <Ionicons name={icon} size={11} color="rgba(255,255,255,0.8)" />
+      <Text
+        style={{
+          fontSize: 9,
+          fontWeight: "700",
+          color: "rgba(255,255,255,0.7)",
+          letterSpacing: 0.4,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+    <Text
+      style={{
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "700",
+        letterSpacing: -0.3,
+        marginTop: 2,
+        fontVariant: ["tabular-nums"] as ["tabular-nums"],
+      }}
+    >
+      {value}
+    </Text>
+  </View>
+);
+
+const Section: React.FC<{
+  title: string;
+  rightLabel?: string;
+  rightLabelColor?: string;
+  children: React.ReactNode;
+}> = ({ title, rightLabel, rightLabelColor, children }) => (
+  <View style={{ marginBottom: 18 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+        paddingHorizontal: 22,
+        marginBottom: 7,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: "600",
+          color: colors.muted,
+          letterSpacing: 0.6,
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </Text>
+      {rightLabel ? (
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "700",
+            color: rightLabelColor ?? colors.muted,
+            letterSpacing: 0.2,
+          }}
+        >
+          {rightLabel}
+        </Text>
+      ) : null}
+    </View>
+    {children}
+  </View>
+);
+
+const SimpleRow: React.FC<{
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  iconBg: string;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+}> = ({ icon, iconColor, iconBg, label, value, onPress }) => (
+  <Pressable
+    onPress={onPress}
+    style={({ pressed }) => [
+      {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 14,
+        paddingVertical: 13,
+        backgroundColor: pressed ? "rgba(0,0,0,0.04)" : "transparent",
+      },
+    ]}
+  >
+    <View
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 9,
+        backgroundColor: iconBg,
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+      }}
+    >
+      <Ionicons name={icon} size={17} color={iconColor} />
+    </View>
+    <Text
+      style={{
+        flex: 1,
+        fontSize: 15,
+        fontWeight: "500",
+        color: colors.text,
+        letterSpacing: -0.2,
+      }}
+    >
+      {label}
+    </Text>
+    {value && (
+      <Text
+        style={{
+          fontSize: 14,
+          color: colors.muted,
+          marginRight: 6,
+          fontVariant: ["tabular-nums"] as ["tabular-nums"],
+        }}
+      >
+        {value}
+      </Text>
+    )}
+    <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+  </Pressable>
+);
+
+const iosStyles = {
+  greetingTop: {
+    fontSize: 11,
+    fontWeight: "700" as const,
+    color: colors.muted,
+    letterSpacing: 0.6,
+  },
+  greetingName: {
+    fontSize: 22,
+    fontWeight: "700" as const,
+    color: colors.text,
+    letterSpacing: -0.4,
+    marginTop: 1,
+  },
+  groupedCard: {
+    marginHorizontal: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    overflow: "hidden" as const,
+  },
 };
 
 export default ParentReviewScreen;

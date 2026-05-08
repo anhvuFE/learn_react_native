@@ -113,7 +113,7 @@ const NotificationsScreen: React.FC<{ onClose: () => void }> = ({
   const isRegistered = isGranted && !!token;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: "#F2F2F7" }}>
       <View style={styles.topBar}>
         <Pressable onPress={onClose} style={styles.topBarBack}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
@@ -270,25 +270,25 @@ const NotificationsScreen: React.FC<{ onClose: () => void }> = ({
           What you'll get
         </Text>
         <NotifInfo
-          icon="time"
+          icon="time-outline"
           color={colors.warning}
           title="New submission to review"
           subtitle="When child submits photo or timer task"
         />
         <NotifInfo
-          icon="checkmark-circle"
+          icon="checkmark-circle-outline"
           color={colors.primary}
           title="Mission approved 🎉"
           subtitle="When parent approves child's submission"
         />
         <NotifInfo
-          icon="close-circle"
+          icon="close-circle-outline"
           color={colors.danger}
           title="Mission needs another try"
           subtitle="When parent rejects child's submission"
         />
         <NotifInfo
-          icon="alarm"
+          icon="alarm-outline"
           color={colors.screenTime}
           title="Reward expiring soon"
           subtitle="2 minutes before screen-time reward ends"

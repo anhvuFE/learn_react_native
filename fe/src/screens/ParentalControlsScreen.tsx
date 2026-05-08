@@ -63,7 +63,7 @@ const ParentalControlsScreen: React.FC<{ onClose: () => void }> = ({
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: "#F2F2F7" }}>
       <View style={styles.topBar}>
         <Pressable onPress={onClose} style={styles.topBarBack}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
@@ -87,7 +87,7 @@ const ParentalControlsScreen: React.FC<{ onClose: () => void }> = ({
           }}
         >
           <Ionicons
-            name="shield-checkmark"
+            name="shield-checkmark-outline"
             size={22}
             color={colors.primary}
           />
@@ -107,7 +107,7 @@ const ParentalControlsScreen: React.FC<{ onClose: () => void }> = ({
         <Text style={styles.sectionLabel}>Approval rules</Text>
 
         <SettingRow
-          icon="school"
+          icon="school-outline"
           iconColor={colors.accent}
           iconBg={colors.accentSoft}
           title="Auto-approve quiz"
@@ -117,7 +117,7 @@ const ParentalControlsScreen: React.FC<{ onClose: () => void }> = ({
         />
 
         <SettingRow
-          icon="walk"
+          icon="walk-outline"
           iconColor={colors.primary}
           iconBg={colors.primarySoft}
           title="Auto-approve walk"
@@ -127,7 +127,7 @@ const ParentalControlsScreen: React.FC<{ onClose: () => void }> = ({
         />
 
         <SettingRow
-          icon="camera"
+          icon="camera-outline"
           iconColor={colors.warning}
           iconBg={colors.warningSoft}
           title="Photo requires approval"
@@ -141,7 +141,7 @@ const ParentalControlsScreen: React.FC<{ onClose: () => void }> = ({
         </Text>
 
         <SettingRow
-          icon="notifications"
+          icon="notifications-outline"
           iconColor={colors.text}
           iconBg={colors.surfaceAlt}
           title="Notify when child submits"

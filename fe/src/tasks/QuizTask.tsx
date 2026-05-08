@@ -217,37 +217,90 @@ const QuizTask: React.FC<Props> = ({
         >
           <Text style={styles.quizQuestionText}>{q.question}</Text>
 
-          {q.options.map((opt, optIdx) => {
-            const selected = answers[qIdx] === optIdx;
-            return (
-              <Pressable
-                key={optIdx}
-                onPress={() => pick(optIdx)}
-                style={({ pressed }) => [
-                  styles.optionRow,
-                  selected && styles.optionRowSelected,
-                  pressed && { transform: [{ scale: 0.98 }] },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.optionLetter,
-                    selected && styles.optionLetterSelected,
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: 14,
+              overflow: "hidden",
+              marginBottom: 14,
+            }}
+          >
+            {q.options.map((opt, optIdx) => {
+              const selected = answers[qIdx] === optIdx;
+              const isLast = optIdx === q.options.length - 1;
+              return (
+                <Pressable
+                  key={optIdx}
+                  onPress={() => pick(optIdx)}
+                  style={({ pressed }) => [
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingHorizontal: 14,
+                      paddingVertical: 14,
+                      backgroundColor: pressed
+                        ? "rgba(0,0,0,0.04)"
+                        : selected
+                          ? "rgba(88,86,214,0.08)"
+                          : "transparent",
+                    },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.optionLetterText,
-                      selected && styles.optionLetterTextSelected,
-                    ]}
+                  <View
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: selected
+                        ? "#5856D6"
+                        : "rgba(120,120,128,0.12)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 12,
+                    }}
                   >
-                    {LETTERS[optIdx]}
+                    {selected ? (
+                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    ) : (
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "700",
+                          color: colors.muted,
+                        }}
+                      >
+                        {LETTERS[optIdx]}
+                      </Text>
+                    )}
+                  </View>
+                  <Text
+                    style={{
+                      flex: 1,
+                      fontSize: 15,
+                      fontWeight: selected ? "600" : "500",
+                      color: selected ? "#5856D6" : colors.text,
+                      letterSpacing: -0.2,
+                    }}
+                  >
+                    {opt}
                   </Text>
-                </View>
-                <Text style={styles.optionText}>{opt}</Text>
-              </Pressable>
-            );
-          })}
+                  {!isLast && (
+                    <View
+                      pointerEvents="none"
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 52,
+                        right: 0,
+                        height: 0.5,
+                        backgroundColor: "rgba(60,60,67,0.18)",
+                      }}
+                    />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
         </Animated.View>
 
         <View style={styles.quizDots}>

@@ -119,7 +119,7 @@ const TaskCard: React.FC<Props> = ({ task, index, onSelect }) => {
             ]}
           >
             <Ionicons
-              name="phone-portrait"
+              name="phone-portrait-outline"
               size={12}
               color={colors.screenTime}
             />
@@ -138,7 +138,7 @@ const TaskCard: React.FC<Props> = ({ task, index, onSelect }) => {
               { backgroundColor: colors.pointsSoft },
             ]}
           >
-            <Ionicons name="star" size={12} color={colors.points} />
+            <Ionicons name="star-outline" size={12} color={colors.points} />
             <Text
               style={[styles.miniRewardPillText, { color: colors.points }]}
             >

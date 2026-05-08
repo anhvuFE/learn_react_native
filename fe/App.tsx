@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  AppState,
   Platform,
   SafeAreaView,
   UIManager,
@@ -160,6 +161,24 @@ function MainApp() {
       if (reshieldTimer) clearTimeout(reshieldTimer);
     };
   }, [isParent, isUnlocked, expiresAtMs, refetchBank]);
+
+  // Safety net — when app foregrounds, if unshield window has passed, re-apply shield
+  useEffect(() => {
+    if (isParent) return;
+    const sub = AppState.addEventListener("change", async (state) => {
+      if (state !== "active") return;
+      try {
+        const ScreenShield = (await import("./modules/expo-screen-shield"))
+          .default;
+        const endsAt = await ScreenShield.getUnshieldEndsAt();
+        if (endsAt && new Date(endsAt).getTime() < Date.now()) {
+          await ScreenShield.shieldNow();
+          refetchBank();
+        }
+      } catch {}
+    });
+    return () => sub.remove();
+  }, [isParent, refetchBank]);
 
   const [tab, setTab] = useState<Tab>("home");
   const [modal, setModal] = useState<Modal>(null);
