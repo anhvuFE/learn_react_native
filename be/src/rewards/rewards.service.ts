@@ -100,6 +100,8 @@ export class RewardsService {
     let points = 0;
     let cashUsd = 0;
     for (const r of all) {
+      // Skip cancelled / rejected rewards — they don't count toward bank balance
+      if (r.status === RewardStatus.CANCELLED) continue;
       if (r.type === RewardType.POINTS) points += r.amount;
       else if (r.type === RewardType.CASH) cashUsd += r.amount;
     }

@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 
 export enum UserRole {
   PARENT = 'parent',
@@ -53,6 +53,12 @@ export class User {
 
   @Field({ nullable: true, defaultValue: false })
   bedtimeMode?: boolean;
+
+  @Field(() => Int, {
+    nullable: true,
+    description: 'Daily screen-time cap (minutes). null = no cap.',
+  })
+  dailyScreenTimeCapMin?: number;
 
   @Field()
   createdAt!: string;

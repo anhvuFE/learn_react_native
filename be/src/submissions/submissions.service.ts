@@ -59,6 +59,19 @@ export class SubmissionsService {
       throw new BadRequestException('Task not in this family');
     }
 
+    // Dedup — block if there's already a pending submission for this child + task
+    const existingPending = await this.col
+      .where('childUid', '==', childUid)
+      .where('taskId', '==', taskId)
+      .where('status', '==', SubmissionStatus.PENDING)
+      .limit(1)
+      .get();
+    if (!existingPending.empty) {
+      throw new BadRequestException(
+        'You already have a submission waiting for parent review for this mission. Wait for the result before submitting again.',
+      );
+    }
+
     const data: Omit<Submission, 'id'> = {
       taskId,
       childUid,
@@ -90,18 +103,16 @@ export class SubmissionsService {
       input.chosenReward,
       { photoStoragePath: input.photoStoragePath },
     );
-    // Notify parent that a submission is waiting
-    const parentUid = await this.parentUidForFamily(familyId);
-    if (parentUid) {
-      const task = await this.tasks.findOne(input.taskId);
-      void this.push.send({
-        uid: parentUid,
-        title: 'New mission to review',
-        body: `Photo evidence for "${task.title}"`,
-        data: { kind: 'submission_pending', submissionId: submission.id },
-      });
+    const settings = await this.parentSettings(familyId);
+    if (!settings.requirePhotoApproval) {
+      // Parent opted out of photo review → auto-approve
+      return this.approve(submission.id, childUid, /* autoApprove */ true);
     }
-    return submission;
+    // Notify parent that a submission is waiting
+    return this.notifyParentForReview(
+      submission,
+      `Photo evidence for "${(await this.tasks.findOne(input.taskId)).title}"`,
+    );
   }
 
   private async parentUidForFamily(familyId: string): Promise<string | null> {
@@ -127,6 +138,76 @@ export class SubmissionsService {
     return hour >= 21 || hour < 7;
   }
 
+  private async dailyCapFor(familyId?: string): Promise<number | null> {
+    if (!familyId) return null;
+    const parentUid = await this.parentUidForFamily(familyId);
+    if (!parentUid) return null;
+    const doc = await this.firebase.firestore
+      .collection('users')
+      .doc(parentUid)
+      .get();
+    const cap = (doc.data() as { dailyScreenTimeCapMin?: number })
+      ?.dailyScreenTimeCapMin;
+    return typeof cap === 'number' && cap > 0 ? cap : null;
+  }
+
+  private async screenTimeMinutesUsedToday(childUid: string): Promise<number> {
+    const now = new Date();
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).toISOString();
+    const snap = await this.firebase.firestore
+      .collection('rewards')
+      .where('childUid', '==', childUid)
+      .where('type', '==', 'screen-time')
+      .get();
+    let total = 0;
+    for (const d of snap.docs) {
+      const data = d.data() as {
+        amount?: number;
+        createdAt?: string;
+        status?: string;
+      };
+      if (data.status === 'cancelled') continue;
+      if (!data.createdAt || data.createdAt < startOfDay) continue;
+      total += data.amount ?? 0;
+    }
+    return total;
+  }
+
+  private async parentSettings(familyId?: string): Promise<{
+    autoApproveWalk: boolean;
+    autoApproveQuiz: boolean;
+    requirePhotoApproval: boolean;
+  }> {
+    const fallback = {
+      autoApproveWalk: true,
+      autoApproveQuiz: true,
+      requirePhotoApproval: true,
+    };
+    if (!familyId) return fallback;
+    const parentUid = await this.parentUidForFamily(familyId);
+    if (!parentUid) return fallback;
+    const doc = await this.firebase.firestore
+      .collection('users')
+      .doc(parentUid)
+      .get();
+    const data = doc.data() as
+      | {
+          autoApproveWalk?: boolean;
+          autoApproveQuiz?: boolean;
+          requirePhotoApproval?: boolean;
+        }
+      | undefined;
+    return {
+      autoApproveWalk: data?.autoApproveWalk ?? true,
+      autoApproveQuiz: data?.autoApproveQuiz ?? true,
+      requirePhotoApproval: data?.requirePhotoApproval ?? true,
+    };
+  }
+
   async submitTimer(
     childUid: string,
     familyId: string,
@@ -139,13 +220,17 @@ export class SubmissionsService {
       input.chosenReward,
       { timerSeconds: input.timerSeconds },
     );
-    // Spec 4.4: timer/walk auto-approves; parent optionally verifies later via UI
-    return this.approve(submission.id, childUid, /* autoApprove */ true);
+    const settings = await this.parentSettings(familyId);
+    if (settings.autoApproveWalk) {
+      return this.approve(submission.id, childUid, /* autoApprove */ true);
+    }
+    // Stays PENDING — parent reviews via PWA / mobile review screen
+    return this.notifyParentForReview(submission, 'Walk submission to review');
   }
 
   /**
-   * Quiz auto-approves if score ≥ threshold; otherwise rejected immediately.
-   * No parent review needed.
+   * Quiz auto-approves if (a) parent enabled autoApproveQuiz AND (b) score ≥ threshold.
+   * Otherwise PENDING for parent review (or rejected if score below threshold).
    */
   async submitQuiz(
     childUid: string,
@@ -161,9 +246,7 @@ export class SubmissionsService {
       { quizScore: input.quizScore },
     );
 
-    if (passed) {
-      return this.approve(submission.id, childUid, /* autoApprove */ true);
-    } else {
+    if (!passed) {
       return this.reject(
         submission.id,
         childUid,
@@ -171,6 +254,30 @@ export class SubmissionsService {
         true,
       );
     }
+    const settings = await this.parentSettings(familyId);
+    if (settings.autoApproveQuiz) {
+      return this.approve(submission.id, childUid, /* autoApprove */ true);
+    }
+    return this.notifyParentForReview(submission, 'Quiz submission to review');
+  }
+
+  private async notifyParentForReview(
+    submission: Submission,
+    title: string,
+  ): Promise<Submission> {
+    if (submission.familyId) {
+      const parentUid = await this.parentUidForFamily(submission.familyId);
+      if (parentUid) {
+        const task = await this.tasks.findOne(submission.taskId);
+        void this.push.send({
+          uid: parentUid,
+          title,
+          body: task.title,
+          data: { kind: 'submission_pending', submissionId: submission.id },
+        });
+      }
+    }
+    return submission;
   }
 
   async findOne(id: string): Promise<Submission> {
@@ -241,6 +348,22 @@ export class SubmissionsService {
         throw new BadRequestException(
           'Screen-time rewards are paused during bedtime hours (9 PM – 7 AM). Approve again later or pick a different reward.',
         );
+      }
+
+      // Daily screen-time cap enforcement
+      const cap = await this.dailyCapFor(submission.familyId);
+      if (cap !== null && cap > 0) {
+        const usedToday = await this.screenTimeMinutesUsedToday(
+          submission.childUid,
+        );
+        const requested = await this.tasks
+          .findOne(submission.taskId)
+          .then((t) => t.rewards.screenTimeMin);
+        if (usedToday + requested > cap) {
+          throw new BadRequestException(
+            `Daily screen-time cap reached. Already earned ${usedToday} of ${cap} minutes today; this reward would push past the cap.`,
+          );
+        }
       }
     }
 

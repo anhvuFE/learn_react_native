@@ -1,4 +1,4 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Field, InputType, Int } from '@nestjs/graphql';
 
 @InputType()
 export class UpdateProfileInput {
@@ -25,4 +25,7 @@ export class UpdateSettingsInput {
 
   @Field({ nullable: true })
   bedtimeMode?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  dailyScreenTimeCapMin?: number;
 }
