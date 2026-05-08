@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@apollo/client";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -71,9 +71,18 @@ const PendingCard: React.FC<{
   taskTitle: string;
   isActing: boolean;
   disabled: boolean;
+  highlighted?: boolean;
   onApprove: () => void;
   onReject: () => void;
-}> = ({ submission: s, taskTitle, isActing, disabled, onApprove, onReject }) => {
+}> = ({
+  submission: s,
+  taskTitle,
+  isActing,
+  disabled,
+  highlighted,
+  onApprove,
+  onReject,
+}) => {
   const [imageBroken, setImageBroken] = useState(false);
 
   const isPhoto = !!s.photoStoragePath;
@@ -104,9 +113,18 @@ const PendingCard: React.FC<{
         backgroundColor: colors.surface,
         borderRadius: 22,
         marginBottom: 12,
-        borderWidth: 1,
-        borderColor: colors.border,
+        borderWidth: highlighted ? 2 : 1,
+        borderColor: highlighted ? colors.accent : colors.border,
         overflow: "hidden",
+        ...(highlighted
+          ? {
+              shadowColor: colors.accent,
+              shadowOpacity: 0.25,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 6,
+            }
+          : null),
       }}
     >
       {/* Hero region: photo if available, otherwise illustrated visual */}
@@ -305,8 +323,22 @@ const PendingCard: React.FC<{
   );
 };
 
-const ParentReviewScreen: React.FC = () => {
+interface ParentReviewProps {
+  focusedSubmissionId?: string | null;
+  onFocusHandled?: () => void;
+}
+
+const ParentReviewScreen: React.FC<ParentReviewProps> = ({
+  focusedSubmissionId,
+  onFocusHandled,
+}) => {
   const { signOut } = useAuth();
+
+  useEffect(() => {
+    if (!focusedSubmissionId) return;
+    const t = setTimeout(() => onFocusHandled?.(), 4000);
+    return () => clearTimeout(t);
+  }, [focusedSubmissionId, onFocusHandled]);
   const { data: meData } = useQuery<{
     me: { name?: string; email?: string };
   }>(ME_QUERY, { fetchPolicy: "cache-first" });
@@ -627,6 +659,7 @@ const ParentReviewScreen: React.FC = () => {
             taskTitle={tasksMap.get(s.taskId) ?? "Mission"}
             isActing={actingId === s.id}
             disabled={approving || rejecting}
+            highlighted={focusedSubmissionId === s.id}
             onApprove={() => approve(s.id)}
             onReject={() => reject(s.id)}
           />

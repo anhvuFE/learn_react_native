@@ -39,6 +39,7 @@ interface TaskRow {
   title: string;
   description: string;
   status: string;
+  recurrence?: string;
   walkTargetSteps?: number;
   walkTargetSeconds?: number;
   videoTitle?: string;
@@ -154,10 +155,15 @@ function TaskCard({
       <div className="text-[13px] text-muted line-clamp-2 mb-3">
         {task.description}
       </div>
-      <div className="flex items-center gap-3 text-[12px] mb-3 pt-3 border-t border-border">
+      <div className="flex items-center gap-2 text-[12px] mb-3 pt-3 border-t border-border flex-wrap">
         <Badge color="primary" label={`${task.rewards.screenTimeMin}m`} />
         <Badge color="points" label={`${task.rewards.points} pts`} />
         <Badge color="warning" label={`$${task.rewards.cashUsd.toFixed(2)}`} />
+        {task.recurrence && task.recurrence !== "none" && (
+          <span className="px-2 py-0.5 rounded-md bg-accent-soft text-accent font-bold uppercase text-[10px] tracking-wider">
+            {task.recurrence}
+          </span>
+        )}
       </div>
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={onEdit}>
@@ -236,6 +242,9 @@ function TaskFormModal({
     task?.quiz ?? [{ question: "", options: ["", "", "", ""], correctIndex: 0 }],
   );
   const [assignedTo, setAssignedTo] = useState(task?.assignedToChildUid ?? "");
+  const [recurrence, setRecurrence] = useState(
+    task?.recurrence?.toUpperCase() ?? "NONE",
+  );
 
   const [create, { loading: creating }] = useMutation(CREATE_TASK, {
     refetchQueries: [{ query: TASKS_QUERY }],
@@ -259,6 +268,7 @@ function TaskFormModal({
       description: description.trim(),
       rewards,
       assignedToChildUid: assignedTo || undefined,
+      recurrence,
     };
     if (type === "WALK") {
       baseInput.walkTargetSteps = parseInt(walkSteps, 10) || 20;
@@ -516,6 +526,32 @@ function TaskFormModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <SectionLabel>Recurrence</SectionLabel>
+            <div className="flex gap-2">
+              {(
+                [
+                  { value: "NONE", label: "One-shot" },
+                  { value: "DAILY", label: "Daily" },
+                  { value: "WEEKLY", label: "Weekly" },
+                ] as const
+              ).map((r) => (
+                <button
+                  key={r.value}
+                  onClick={() => setRecurrence(r.value)}
+                  className={cn(
+                    "flex-1 py-2 rounded-xl border-2 text-[13px] font-semibold",
+                    recurrence === r.value
+                      ? "border-text bg-surface-alt text-text"
+                      : "border-border text-muted hover:border-text/30",
+                  )}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

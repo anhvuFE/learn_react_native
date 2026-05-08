@@ -13,35 +13,48 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.screenmindr.app",
+      "deploymentTarget": "16.0",
       "infoPlist": {
         "NSCameraUsageDescription": "ScreenMindr needs camera access so you can take a photo to prove you completed your mission.",
         "NSPhotoLibraryUsageDescription": "ScreenMindr needs photo library access so you can choose a photo for your mission.",
-        "NSMotionUsageDescription": "ScreenMindr counts your steps to verify your walk mission."
+        "NSMotionUsageDescription": "ScreenMindr counts your steps to verify your walk mission.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.screenmindr.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F8FAFC"
       },
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "ACTIVITY_RECOGNITION"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-dev-client",
       [
         "expo-image-picker",
         {
           "cameraPermission": "ScreenMindr needs camera access so you can take a photo to prove you completed your mission.",
           "photosPermission": "ScreenMindr needs photo library access so you can choose a photo for your mission."
         }
-      ]
-    ]
+      ],
+      "./modules/expo-screen-shield/plugin"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9f4bab0c-9ae2-4347-a4d4-fb6cd6914c59"
+      }
+    },
+    "owner": "xanh2312"
   }
 }

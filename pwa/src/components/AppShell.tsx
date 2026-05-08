@@ -1,4 +1,5 @@
 import { useQuery } from "@apollo/client";
+import { sendEmailVerification } from "firebase/auth";
 import {
   Activity,
   AppWindow,
@@ -9,11 +10,14 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
+  MailWarning,
   Settings,
   Shield,
   Users,
+  X,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useNavigate } from "react-router";
 import { useAuth } from "../lib/auth";
@@ -147,6 +151,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
       {/* Main */}
       <main className="flex-1 overflow-auto">
+        <EmailVerificationBanner />
         <div className="max-w-6xl mx-auto px-8 py-8">{children}</div>
       </main>
 
@@ -159,6 +164,49 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function EmailVerificationBanner() {
+  const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  if (!user || !user.email || user.emailVerified || dismissed) return null;
+
+  const resend = async () => {
+    setBusy(true);
+    try {
+      await sendEmailVerification(user);
+      alert(`Verification email sent to ${user.email}.`);
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="bg-warning text-white px-5 py-2.5 flex items-center gap-3">
+      <MailWarning size={16} strokeWidth={2.4} />
+      <div className="flex-1 text-[13px] font-medium">
+        Verify your email — open the link sent to{" "}
+        <span className="font-bold">{user.email}</span>
+      </div>
+      <button
+        onClick={resend}
+        disabled={busy}
+        className="bg-white/20 hover:bg-white/30 text-[12px] font-bold px-3 py-1 rounded-full disabled:opacity-60"
+      >
+        {busy ? "Sending…" : "Resend"}
+      </button>
+      <button
+        onClick={() => setDismissed(true)}
+        className="hover:bg-white/15 rounded-md p-1"
+      >
+        <X size={14} />
+      </button>
     </div>
   );
 }

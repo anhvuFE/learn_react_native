@@ -1,6 +1,8 @@
 import { useMutation } from "@apollo/client";
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithCustomToken,
   signInWithEmailAndPassword,
 } from "firebase/auth";
@@ -59,11 +61,34 @@ const AuthScreen: React.FC = () => {
     }
     setBusy(true);
     try {
-      await createUserWithEmailAndPassword(auth, email.trim(), password);
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password,
+      );
+      try {
+        await sendEmailVerification(cred.user);
+      } catch {}
     } catch (e) {
       Alert.alert("Sign up failed", (e as Error).message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      Alert.alert("Email required", "Enter your email above first");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      Alert.alert(
+        "Reset link sent",
+        "Check your inbox for the password reset email.",
+      );
+    } catch (e) {
+      Alert.alert("Failed", (e as Error).message);
     }
   }
 
@@ -193,6 +218,23 @@ const AuthScreen: React.FC = () => {
               autoCapitalize="none"
               editable={!busy}
             />
+
+            {!isSignup && (
+              <Pressable
+                onPress={handleForgotPassword}
+                style={{ marginTop: 8, alignSelf: "flex-end" }}
+              >
+                <Text
+                  style={{
+                    color: colors.accent,
+                    fontSize: 12,
+                    fontWeight: "600",
+                  }}
+                >
+                  Forgot password?
+                </Text>
+              </Pressable>
+            )}
 
             <View style={{ height: 18 }} />
 

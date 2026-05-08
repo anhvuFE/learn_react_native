@@ -73,6 +73,7 @@ const TASK_FIELDS = `
   title
   description
   status
+  recurrence
   walkTargetSeconds
   walkTargetSteps
   videoTitle

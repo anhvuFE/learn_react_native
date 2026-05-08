@@ -1,8 +1,9 @@
 import { useMutation, useQuery } from "@apollo/client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -11,6 +12,7 @@ import {
 } from "react-native";
 import AppTile, { APP_BRAND_COLOR } from "../components/AppTile";
 import { Ionicons } from "../components/icons";
+import ScreenShield from "../../modules/expo-screen-shield";
 import {
   ADD_RESTRICTED_APP,
   REMOVE_RESTRICTED_APP,
@@ -104,6 +106,22 @@ const RestrictedAppsScreen: React.FC<{ onClose: () => void }> = ({
         }}
         showsVerticalScrollIndicator={false}
       >
+        <NativeShieldSection />
+
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "700",
+            color: colors.muted,
+            letterSpacing: 0.6,
+            textTransform: "uppercase",
+            marginTop: 24,
+            marginBottom: 8,
+          }}
+        >
+          Family-shared list
+        </Text>
+
         {loading && apps.length === 0 ? (
           <ActivityIndicator color={colors.primary} />
         ) : (
@@ -279,6 +297,225 @@ const fieldInput = {
   color: colors.text,
   borderWidth: 1,
   borderColor: colors.border,
+};
+
+const NativeShieldSection: React.FC = () => {
+  const [authorized, setAuthorized] = useState(false);
+  const [shielded, setShielded] = useState(false);
+  const [count, setCount] = useState(0);
+  const [endsAt, setEndsAt] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const refresh = async () => {
+    try {
+      const a = await ScreenShield.isAuthorized();
+      const s = await ScreenShield.isShielded();
+      const c = await ScreenShield.selectedAppsCount();
+      const e = await ScreenShield.getUnshieldEndsAt();
+      setAuthorized(a);
+      setShielded(s);
+      setCount(c);
+      setEndsAt(e);
+    } catch {}
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  if (Platform.OS !== "ios") {
+    return (
+      <View
+        style={{
+          backgroundColor: colors.surfaceAlt,
+          borderRadius: 14,
+          padding: 14,
+          marginBottom: 4,
+        }}
+      >
+        <Text style={{ fontSize: 12, color: colors.muted }}>
+          Device-level shield is iOS-only. Android uses Accessibility Service
+          (coming).
+        </Text>
+      </View>
+    );
+  }
+
+  const requestAuth = async () => {
+    setBusy(true);
+    try {
+      const ok = await ScreenShield.requestAuthorization();
+      if (!ok) {
+        Alert.alert(
+          "Family Controls denied",
+          "Open Settings → Screen Time and grant access for ScreenMindr.",
+        );
+      }
+      await refresh();
+    } catch (e) {
+      Alert.alert("Auth failed", (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pick = async () => {
+    setBusy(true);
+    try {
+      await ScreenShield.presentPicker();
+      await refresh();
+    } catch (e) {
+      Alert.alert("Picker failed", (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const lockNow = async () => {
+    setBusy(true);
+    try {
+      await ScreenShield.shieldNow();
+      await refresh();
+    } catch (e) {
+      Alert.alert("Shield failed", (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const minutesLeft = endsAt
+    ? Math.max(
+        0,
+        Math.round((new Date(endsAt).getTime() - Date.now()) / 60000),
+      )
+    : 0;
+
+  return (
+    <View
+      style={{
+        backgroundColor: colors.text,
+        borderRadius: 18,
+        padding: 18,
+        marginBottom: 12,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+        <Ionicons name="shield-checkmark" size={20} color="#fff" />
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.7)",
+            fontSize: 11,
+            fontWeight: "700",
+            letterSpacing: 0.6,
+            textTransform: "uppercase",
+            marginLeft: 6,
+          }}
+        >
+          Device-level shield (iOS)
+        </Text>
+      </View>
+
+      <Text
+        style={{
+          color: "#fff",
+          fontSize: 14,
+          fontWeight: "600",
+          marginBottom: 4,
+        }}
+      >
+        {!authorized
+          ? "Not authorized yet"
+          : count === 0
+            ? "No apps picked"
+            : shielded
+              ? `${count} app(s) blocked`
+              : `${count} app(s) — unlocked${minutesLeft > 0 ? ` for ${minutesLeft} min` : ""}`}
+      </Text>
+      <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, marginBottom: 14 }}>
+        {!authorized
+          ? "Grant Family Controls so ScreenMindr can block selected apps at the OS level."
+          : count === 0
+            ? "Pick which apps stay locked until your child earns screen time."
+            : shielded
+              ? "Apps will unlock automatically when reward is granted."
+              : "Apps will lock again when timer ends."}
+      </Text>
+
+      <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+        {!authorized ? (
+          <Pressable
+            disabled={busy}
+            onPress={requestAuth}
+            style={{
+              backgroundColor: colors.accent,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 999,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons name="key" size={14} color="#fff" />
+            <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700", marginLeft: 6 }}>
+              Authorize
+            </Text>
+          </Pressable>
+        ) : (
+          <>
+            <Pressable
+              disabled={busy}
+              onPress={pick}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.15)",
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                borderRadius: 999,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="apps" size={14} color="#fff" />
+              <Text
+                style={{ color: "#fff", fontSize: 13, fontWeight: "700", marginLeft: 6 }}
+              >
+                {count > 0 ? "Re-pick apps" : "Pick apps"}
+              </Text>
+            </Pressable>
+            {count > 0 && (
+              <Pressable
+                disabled={busy}
+                onPress={lockNow}
+                style={{
+                  backgroundColor: shielded ? "rgba(255,255,255,0.08)" : "#FBBF24",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderRadius: 999,
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons
+                  name={shielded ? "checkmark" : "lock-closed"}
+                  size={14}
+                  color={shielded ? "rgba(255,255,255,0.7)" : "#000"}
+                />
+                <Text
+                  style={{
+                    color: shielded ? "rgba(255,255,255,0.7)" : "#000",
+                    fontSize: 13,
+                    fontWeight: "700",
+                    marginLeft: 6,
+                  }}
+                >
+                  {shielded ? "Locked" : "Lock now"}
+                </Text>
+              </Pressable>
+            )}
+          </>
+        )}
+      </View>
+    </View>
+  );
 };
 
 export default RestrictedAppsScreen;

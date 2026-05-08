@@ -1,0 +1,7 @@
+{
+  "name": "expo-screen-shield",
+  "version": "0.1.0",
+  "description": "Family Controls + ManagedSettings shield for ScreenMindr",
+  "main": "index.ts",
+  "private": true
+}

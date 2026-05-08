@@ -19,8 +19,10 @@ if (
 }
 
 import BottomNav from "./src/components/BottomNav";
+import EmailVerificationBanner from "./src/components/EmailVerificationBanner";
 import { apolloClient } from "./src/lib/apollo";
 import { AuthProvider, useAuth } from "./src/lib/auth-context";
+import * as Notifications from "expo-notifications";
 import {
   getExpoPushToken,
   getPushPermissionStatus,
@@ -28,6 +30,9 @@ import {
 import { ME_QUERY, MY_BANK_QUERY, SET_PUSH_TOKEN } from "./src/lib/queries";
 import AuthScreen from "./src/screens/AuthScreen";
 import LockScreen from "./src/screens/LockScreen";
+import OnboardingScreen, {
+  hasOnboarded,
+} from "./src/screens/OnboardingScreen";
 import MenuScreen from "./src/screens/MenuScreen";
 import MissionComplete from "./src/screens/MissionComplete";
 import ParentReviewScreen from "./src/screens/ParentReviewScreen";
@@ -118,11 +123,86 @@ function MainApp() {
     : null;
   const isUnlocked = expiresAtMs !== null && expiresAtMs > Date.now();
 
+  // Native iOS shield lifecycle (child only) — unshield on reward, re-shield on expire
+  useEffect(() => {
+    if (isParent) return;
+    let cancelled = false;
+    let reshieldTimer: ReturnType<typeof setTimeout> | null = null;
+
+    (async () => {
+      try {
+        const ScreenShield = (await import("./modules/expo-screen-shield"))
+          .default;
+        if (cancelled) return;
+        if (isUnlocked && expiresAtMs) {
+          const remainingMs = Math.max(0, expiresAtMs - Date.now());
+          const minutes = remainingMs / 60_000;
+          await ScreenShield.unshieldFor(minutes);
+          // Schedule a re-shield in JS as a backup (native does not auto-reshield without DeviceActivityMonitor extension)
+          reshieldTimer = setTimeout(() => {
+            ScreenShield.shieldNow().catch(() => {});
+            refetchBank();
+          }, remainingMs);
+        } else {
+          // No active reward → ensure shield is on
+          const authorized = await ScreenShield.isAuthorized();
+          if (authorized) {
+            await ScreenShield.shieldNow();
+          }
+        }
+      } catch {
+        // Native module not available (Expo Go) — silently ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (reshieldTimer) clearTimeout(reshieldTimer);
+    };
+  }, [isParent, isUnlocked, expiresAtMs, refetchBank]);
+
   const [tab, setTab] = useState<Tab>("home");
   const [modal, setModal] = useState<Modal>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [completedMission, setCompletedMission] =
     useState<CompletedMission | null>(null);
+  const [focusedSubmissionId, setFocusedSubmissionId] = useState<string | null>(
+    null,
+  );
+
+  // Handle push notification taps — route to relevant screen
+  useEffect(() => {
+    const handleNotification = (
+      data: Record<string, unknown> | undefined,
+    ) => {
+      if (!data) return;
+      const kind = data.kind as string | undefined;
+      if (
+        (kind === "submission_pending" || kind === "submission_submitted") &&
+        typeof data.submissionId === "string"
+      ) {
+        setFocusedSubmissionId(data.submissionId);
+        setTab("home");
+        setModal(null);
+      } else if (kind === "submission_approved") {
+        setTab("rewards");
+      }
+    };
+
+    // Cold start: app opened by tapping notification while killed
+    Notifications.getLastNotificationResponseAsync().then((res) => {
+      if (res) handleNotification(res.notification.request.content.data);
+    });
+
+    // Warm: app foreground/background, user taps notification
+    const sub = Notifications.addNotificationResponseReceivedListener((res) => {
+      handleNotification(res.notification.request.content.data);
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, []);
 
   const openTask = useCallback((task: Task) => {
     setActiveTask(task);
@@ -153,7 +233,12 @@ function MainApp() {
 
   const renderHomeTab = () => {
     if (isParent) {
-      return <ParentReviewScreen />;
+      return (
+        <ParentReviewScreen
+          focusedSubmissionId={focusedSubmissionId}
+          onFocusHandled={() => setFocusedSubmissionId(null)}
+        />
+      );
     }
     if (isUnlocked && expiresAtMs) {
       return (
@@ -172,6 +257,7 @@ function MainApp() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaView style={{ flex: 1 }}>
+        <EmailVerificationBanner />
         {!isModalOpen && (
           <TabContainer tab={tab}>
             {tab === "home" && renderHomeTab()}
@@ -205,7 +291,20 @@ function MainApp() {
 
 function Root() {
   const { user, initializing } = useAuth();
-  if (initializing) return <SplashScreen />;
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    hasOnboarded().then(setOnboarded);
+  }, []);
+
+  if (initializing || onboarded === null) return <SplashScreen />;
+  if (!onboarded) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <OnboardingScreen onDone={() => setOnboarded(true)} />
+      </SafeAreaView>
+    );
+  }
   if (!user)
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
